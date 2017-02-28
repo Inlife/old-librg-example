@@ -1,0 +1,3 @@
+[submodule "vendor/reguider"]
+	path = vendor/reguider
+	url = git@gitlab.com:reguider/reguider.git
