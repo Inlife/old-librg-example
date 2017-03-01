@@ -54,7 +54,7 @@ set(CMAKE_MACOSX_RPATH 1)
 # Includes for libs and remote sources
 ###
 include_directories(
-    vendor/reguider/
+    vendor/reguider/include
     server/
 )
 
