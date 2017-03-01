@@ -33,24 +33,17 @@ include_directories(
     server/
 )
 
-file(GLOB_RECURSE SERVER_FILES
-  "${PROJECT_SOURCE_DIR}/server/*.cpp"
-)
-
 ###
 # Includes for current source executable
 ###
-add_executable(server
-    ${SERVER_FILES}
-)
+file(GLOB_RECURSE SERVER_FILES "${PROJECT_SOURCE_DIR}/server/*.cpp")
+file(GLOB_RECURSE CLIENT_FILES "${PROJECT_SOURCE_DIR}/client/*.cpp")
 
-file(GLOB_RECURSE CLIENT_FILES
-  "${PROJECT_SOURCE_DIR}/client/*.cpp"
-)
-
-add_executable(client
-    ${CLIENT_FILES}
-)
+###
+# Adding executables
+###
+add_executable(server ${SERVER_FILES})
+add_executable(client ${CLIENT_FILES})
 
 ###
 # Linking libraries
