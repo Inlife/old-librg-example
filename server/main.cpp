@@ -17,7 +17,7 @@ enum
 };
 
 entity_id create_cube(int res, float size, bool hollow) {
-    auto data = new CubeData {res, wallSize, hollow };
+    auto data = new CubeData {res, size, hollow };
 
     auto entity = Entity::Manager::Instance()->Create(EntityType_Cube);
 
@@ -29,6 +29,7 @@ entity_id create_cube(int res, float size, bool hollow) {
 using namespace Server;
 
 int main(int argc, char** argv) {
-
+    entity_id cube = create_cube(12, 42.3f, false);
+    
     Start(argc, argv);
 }
