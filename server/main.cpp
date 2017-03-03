@@ -56,6 +56,18 @@
 //     native.Func("createVehicle", &createVehicle);
 // }
 
+struct Position {
+    Position(float x = 0.0f, float y = 0.0f, float z = 0.0f) : x(x), y(y), z(z) {}
+
+    float x, y, z;
+};
+
+struct Rotation {
+    Rotation(float x = 0.0f, float y = 0.0f, float z = 0.0f) : x(x), y(y), z(z) {}
+
+    float x, y, z;
+};
+
 int main(int argc, char** argv)
 {
     // Server::AddLogger(printer);
@@ -69,6 +81,9 @@ int main(int argc, char** argv)
 
     entityx::EntityX ex;
     entityx::Entity entity = ex.entities.create();
+
+    entity.assign<Position>(1.0f, 2.0f, 2.0f);
+    entity.assign<Rotation>(1.0f, 2.0f, 2.0f);
 
     printf("created entity: %zd\n", entity.id().index());
 
