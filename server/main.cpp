@@ -1,69 +1,76 @@
 #include <librg/server.h>
 #include <librg/Core.h>
 
-struct CubeData
-{
-    int res;
-    float wallSize;
-    bool hollow;
-};
+#include <entityx/entityx.h>
 
-using namespace Server;
+// struct CubeData
+// {
+//     int res;
+//     float wallSize;
+//     bool hollow;
+// };
 
-enum
-{
-    EntityType_Cube = EntityType_FirstFree,
-    EntityType_Vehicle,
-    // ...
-};
+// using namespace Server;
 
-entity_id create_cube(int res, float size, bool hollow) {
-    auto data = new CubeData {res, size, hollow };
+// enum
+// {
+//     EntityType_Cube = EntityType_FirstFree,
+//     EntityType_Vehicle,
+//     // ...
+// };
 
-    auto entity = Entity::Manager::Instance()->Create(EntityType_Cube);
+// entity_id create_cube(int res, float size, bool hollow) {
+//     auto data = new CubeData {res, size, hollow };
 
-    Entity::Manager::Instance()->AttachData(entity, data);
+//     auto entity = Entity::Manager::Instance()->Create(EntityType_Cube);
 
-    return entity;
-}
+//     Entity::Manager::Instance()->AttachData(entity, data);
 
-
-using ResourceManager = Server::Resource::Manager;
-using EntityManager = Server::Resource::Manager;
+//     return entity;
+// }
 
 
+// using ResourceManager = Server::Resource::Manager;
+// using EntityManager = Server::Resource::Manager;
 
-struct Vehicle {
-    byte wheels[2];
-    int64_t color[2];
-};
 
-bool test() {
-    return ResourceManager::Instance()->IsRunning("default");
-}
 
-int64_t createVehicle(int model, float x, float y, float z, float rx, float ry, float rz, Function callback) {
-    entity_id entity = Server::Entity::Manager::Create(EntityType_Vehicle);
+// struct Vehicle {
+//     byte wheels[2];
+//     int64_t color[2];
+// };
 
-    return entity;
-}
+// bool test() {
+//     return ResourceManager::Instance()->IsRunning("default");
+// }
 
-void sqinstall(Sqrat::Table& native)
-{
-    native.Func("test",  &test);
-    native.Func("createVehicle", &createVehicle);
-}
+// int64_t createVehicle(int model, float x, float y, float z, float rx, float ry, float rz, Function callback) {
+//     entity_id entity = Server::Entity::Manager::Create(EntityType_Vehicle);
+
+//     return entity;
+// }
+
+// void sqinstall(Sqrat::Table& native)
+// {
+//     native.Func("test",  &test);
+//     native.Func("createVehicle", &createVehicle);
+// }
 
 int main(int argc, char** argv)
 {
-    Server::AddLogger(printer);
-    Server::AddLogger([](int type, std::string message) -> void {
-        printf(message.c_str());
-    });
+    // Server::AddLogger(printer);
+    // Server::AddLogger([](int type, std::string message) -> void {
+    //     printf(message.c_str());
+    // });
 
-    Server::SetResourceFolder("resources");
+    // Server::SetResourceFolder("resources");
 
-    Server::Scripting::Registry::listeners.insert(sqinstall);
+    // Server::Scripting::Registry::listeners.insert(sqinstall);
+
+    entityx::EntityX ex;
+    entityx::Entity entity = ex.entities.create();
+
+    printf("created entity: %zd\n", entity.id().index());
 
     Server::Start(argc, argv);
 }
