@@ -9,8 +9,7 @@
 #include <BitStream.h>
 #include <RakNetTypes.h>  // MessageID
 
-#include <librg/Shared/BuildVersion.h>
-#include <librg/Shared/MessageID.h>
+#include <librg/core/client.h>
 
 #if WIN32
 inline void uv_sleep(int milis) {
