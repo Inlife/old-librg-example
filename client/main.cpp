@@ -34,24 +34,6 @@ static void tty_alloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
     buf->len = 1024;
 }
 
-
-
-
-
-
-
-bool networkinit = false;
-RakNet::RakPeerInterface *peer;
-RakNet::Packet *packet;
-RakNet::SocketDescriptor sd;
-
-
-
-
-
-
-
-
 /**
  * On user console message
  * @param stream tty handle
@@ -63,82 +45,8 @@ void on_console_message(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     buf->base[nread] = '\0';
 
     if (strncmp(buf->base, "conn", 4) == 0) {
-        std::string ipAddress = "127.0.0.1";
-
-        peer = RakNet::RakPeerInterface::GetInstance();
-        peer->Startup(1, &sd, 1);
-
-        printf("Connecting to %s:%d...\n", ipAddress.c_str(), 27010);
-        peer->Connect(ipAddress.c_str(), 27010, 0, 0);
-
-        networkinit = true;
-
-        librg::network::client(ipAddress, 27010);
+        librg::network::client("127.0.0.1", 27010);
     }
-}
-
-
-
-void update_network() {
-    for (packet=peer->Receive(); packet; peer->DeallocatePacket(packet), packet=peer->Receive())
-        {
-            switch (packet->data[0])
-            {
-            case ID_REMOTE_DISCONNECTION_NOTIFICATION:
-                printf("Another client has disconnected.\n");
-                break;
-            case ID_REMOTE_CONNECTION_LOST:
-                printf("Another client has lost the connection.\n");
-                break;
-            case ID_REMOTE_NEW_INCOMING_CONNECTION:
-                printf("Another client has connected.\n");
-                break;
-            case ID_NEW_INCOMING_CONNECTION:
-                printf("A connection is incoming.\n");
-                break;
-            case ID_NO_FREE_INCOMING_CONNECTIONS:
-                printf("The server is full.\n");
-                break;
-            case ID_DISCONNECTION_NOTIFICATION:
-                printf("We have been disconnected.\n");
-                break;
-            case ID_CONNECTION_LOST:
-                printf("Connection lost.\n");
-                break;
-            case ID_CONNECTION_REQUEST_ACCEPTED:
-                {
-                    printf("Our connection request has been accepted.\n");
-                    printf("Sending OnClientConnect packet\n");
-                    /**
-                     * This data-packet is used to validate
-                     * game mod compability, and add client to server list
-                     *
-                     * Data template
-                     * @param int NETWORK_PLATFORM_ID
-                     * @param int NETWORK_PROTOCOL_VERSION
-                     * @param int NETWORK_BUILD_VERSION
-                     * @param string Client Name
-                     */
-                    RakNet::BitStream data;
-                    data.Write((RakNet::MessageID)MessageID::CONNECTION_INIT);
-                    data.Write(NETWORK_PLATFORM_ID);
-                    data.Write(NETWORK_PROTOCOL_VERSION);
-                    data.Write(NETWORK_BUILD_VERSION);
-                    data.Write("Test Player");
-                    data.Write("4555ASDASD4555ASDASD4555");
-                    peer->Send(&data, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-                }
-                break;
-            case MessageID::CONNECTION_ACCEPTED:
-                {
-                    printf("Successfuly connected to server.\n");
-                }
-                break;
-            default:
-                printf("Message with identifier %i has arrived.\n", packet->data[0]);
-                break;
-            }
-        }
 }
 
 void ontick(double dt)
@@ -191,6 +99,8 @@ int main(int argc, char** argv) {
     librg::events_terminate();
     librg::network_terminate();
     librg::resources_terminate();
+
+    librg::core::client_terminate();
 
     return 0;
 }
