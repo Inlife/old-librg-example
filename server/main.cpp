@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 {
     std::string test = "";
 
-    test.append("==================================================\n");
+    test.append("===============      SERVER      =================\n");
     test.append("==                                              ==\n");
     test.append("==                 ¯\\_(ツ)_/¯                   ==\n");
     test.append("==                                              ==\n");

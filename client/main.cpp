@@ -1,26 +1,8 @@
-#define RGCLIENT
-
-// #include <librg/server.h>
 #include <uv.h>
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
-#include <RakPeerInterface.h>
-#include <MessageIdentifiers.h>
-#include <BitStream.h>
-#include <RakNetTypes.h>  // MessageID
-
 #include <librg/core/client.h>
-
-
-/**
- * Main loop ticker
- * @param handle [description]
- */
-void timed_loop(uv_timer_t* handle)
-{
-    printf("hey\n");
-}
 
 /**
  * Alloc callback for allocating input memory
@@ -55,7 +37,6 @@ void ontick(double dt)
 }
 
 int main(int argc, char** argv) {
-    uv_timer_t timer_req;
     uv_tty_t tty;
 
     uv_tty_init(uv_default_loop(), &tty, 0, 1);
@@ -64,10 +45,9 @@ int main(int argc, char** argv) {
     // setup reading callback
     uv_read_start((uv_stream_t*)&tty, tty_alloc, on_console_message);
 
-
     std::string test = "";
 
-    test.append("==================================================\n");
+    test.append("==========          CLIENT         ===============\n");
     test.append("==                                              ==\n");
     test.append("==                 ¯\\_(ツ)_/¯                   ==\n");
     test.append("==                                              ==\n");
