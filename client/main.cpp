@@ -1,3 +1,4 @@
+#define RGCLIENT
 
 // #include <librg/server.h>
 #include <uv.h>
@@ -11,16 +12,6 @@
 
 #include <librg/core/client.h>
 
-#if WIN32
-inline void uv_sleep(int milis) {
-    Sleep(milis);
-}
-#else
-#include <unistd.h>
-inline void uv_sleep(int milis) {
-    usleep(milis * 1000);
-}
-#endif
 
 /**
  * Main loop ticker
@@ -81,6 +72,8 @@ void on_console_message(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
         peer->Connect(ipAddress.c_str(), 27010, 0, 0);
 
         networkinit = true;
+
+        librg::network::client(ipAddress, 27010);
     }
 }
 
@@ -148,6 +141,11 @@ void update_network() {
         }
 }
 
+void ontick(double dt)
+{
+    // printf("tick?\n");
+}
+
 int main(int argc, char** argv) {
     uv_timer_t timer_req;
     uv_tty_t tty;
@@ -158,6 +156,25 @@ int main(int argc, char** argv) {
     // setup reading callback
     uv_read_start((uv_stream_t*)&tty, tty_alloc, on_console_message);
 
+
+    std::string test = "";
+
+    test.append("==================================================\n");
+    test.append("==                                              ==\n");
+    test.append("==                 ¯\\_(ツ)_/¯                   ==\n");
+    test.append("==                                              ==\n");
+    test.append("==================================================\n");
+
+    printf("%s\n\n", test.c_str());
+
+    librg::core::set_mode(librg::core::mode_client);
+    librg::core::set_tick_cb(ontick);
+
+    librg::entities_initialize();
+    librg::events_initialize();
+    librg::network_initialize();
+    librg::resources_initialize();
+
     // a game ticker
     while (true) {
         uv_sleep(10); // 10 ms gameloop tick
@@ -167,16 +184,13 @@ int main(int argc, char** argv) {
         // game code
         // game code
 
-        // run libuv one-time iteration
-        uv_run(uv_default_loop(), UV_RUN_NOWAIT);
-        if (networkinit) {
-            update_network();
-        }
+        librg::core::client_tick();
     }
 
-    if (networkinit) {
-        RakNet::RakPeerInterface::DestroyInstance(peer);
-    }
+    librg::entities_terminate();
+    librg::events_terminate();
+    librg::network_terminate();
+    librg::resources_terminate();
 
     return 0;
 }

@@ -2,7 +2,7 @@
 # CMake entry point
 ###
 cmake_minimum_required (VERSION 2.8)
-project (testing)
+project (server-test)
 
 
 ###

@@ -1,3 +1,5 @@
+#define RGSERVER
+
 #include <librg/core/server.h>
 #include <librg/events.h>
 
