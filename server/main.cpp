@@ -2,6 +2,10 @@
 
 #include <librg/core/server.h>
 #include <librg/events.h>
+#include <librg/entities.h>
+#include <librg/events.h>
+#include <librg/network.h>
+#include <librg/resources.h>
 
 // #include <entityx/entityx.h>
 // #include <entityx/deps/Dependencies.h>

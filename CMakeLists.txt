@@ -24,12 +24,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 # Compile vendor dependencies
 ###
 add_subdirectory(vendor/reguider)
+add_subdirectory(vendor/SDL)
 
 ###
 # Includes for libs and remote sources
 ###
 include_directories(
     vendor/reguider/include
+    vendor/SDL/include
     server/
 )
 
@@ -49,4 +51,4 @@ add_executable(client ${CLIENT_FILES})
 # Linking libraries
 ###
 target_link_libraries(server librg)
-target_link_libraries(client librg)
+target_link_libraries(client librg SDL2-static)

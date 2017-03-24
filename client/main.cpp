@@ -3,6 +3,10 @@
 #include <string.h>
 #include <iostream>
 #include <librg/core/client.h>
+#include <librg/entities.h>
+#include <librg/events.h>
+#include <librg/network.h>
+#include <librg/resources.h>
 
 /**
  * Alloc callback for allocating input memory
