@@ -1,4 +1,4 @@
-#define RGSERVER
+﻿#define RGSERVER
 
 #include <librg/core/server.h>
 #include <librg/events.h>
@@ -107,6 +107,8 @@ int main(int argc, char** argv)
     // while (true) {
     //     librg::core::client_tick();
     // }
+
+    return 0;
 }
 
 // function createVehicle(modelid, x,y,z) {
