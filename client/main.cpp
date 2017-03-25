@@ -161,6 +161,11 @@ void RunGame()
                     case SDLK_LEFT:
                         --playerPos.x;
                         break;
+                    default :
+                        break;
+                }
+                switch ( event.key.keysym.sym )
+                {
                         // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
                     case SDLK_DOWN:
                         ++playerPos.y;
@@ -183,7 +188,23 @@ void RunGame()
     }
 }
 
-int main(int argc, char *args[]) {
+void entity_create(uint64_t guid, uint8_t type, Entity entity, RakNet::BitStream* packet)
+{
+    librg::core::log("entity_create called");
+}
+
+void entity_update(uint64_t guid, uint8_t type, Entity entity, RakNet::BitStream* packet)
+{
+    librg::core::log("entity_update called");
+}
+
+void entity_remove(uint64_t guid, uint8_t type, Entity entity, RakNet::BitStream* packet)
+{
+    librg::core::log("entity_remove called");
+}
+
+int main(int argc, char *args[])
+{
     uv_tty_t tty;
 
     uv_tty_init(uv_default_loop(), &tty, 0, 1);
@@ -204,6 +225,10 @@ int main(int argc, char *args[]) {
 
     librg::core::set_mode(librg::core::mode_client);
     librg::core::set_tick_cb(ontick);
+
+    librg::entity_callbacks::set_create(entity_create);
+    librg::entity_callbacks::set_update(entity_update);
+    librg::entity_callbacks::set_remove(entity_remove);
 
     librg::entities_initialize();
     librg::events_initialize();

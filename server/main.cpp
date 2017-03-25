@@ -6,6 +6,7 @@
 #include <librg/events.h>
 #include <librg/network.h>
 #include <librg/resources.h>
+#include <librg/streamer.h>
 
 // #include <entityx/entityx.h>
 // #include <entityx/deps/Dependencies.h>
@@ -50,10 +51,12 @@ int main(int argc, char** argv)
     librg::events_initialize();
     librg::network_initialize();
     librg::resources_initialize();
+    librg::streamer_initialize(4000, 4000);
 
     librg::core::set_tick_cb(ontick);
     librg::core::server(argc, argv);
 
+    librg::streamer_terminate();
     librg::entities_terminate();
     librg::events_terminate();
     librg::network_terminate();
