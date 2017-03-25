@@ -107,7 +107,7 @@ bool InitSDL()
 
 bool mehCreateWindow()
 {
-    window = SDL_CreateWindow( "Server", posX, posY, sizeX, sizeY, 0 );
+    window = SDL_CreateWindow( "client", posX, posY, sizeX, sizeY, 0 );
 
     if ( window == nullptr )
     {
