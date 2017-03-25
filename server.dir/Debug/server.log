@@ -1,0 +1,4 @@
+﻿  Building Custom Rule F:/server-test/CMakeLists.txt
+  CMake does not need to re-run because F:/server-test/build/CMakeFiles/generate.stamp is up-to-date.
+  main.cpp
+  server.vcxproj -> F:\server-test\build\Debug\server.exe
