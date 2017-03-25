@@ -7,6 +7,8 @@
 #include <librg/events.h>
 #include <librg/network.h>
 #include <librg/resources.h>
+#include <SDL.h>
+#undef main
 
 /**
  * Alloc callback for allocating input memory
@@ -40,9 +42,6 @@ void ontick(double dt)
     // printf("tick?\n");
 }
 
-#include <SDL2/SDL.h>
-#include <iostream>
-
 int posX = 100;
 int posY = 200;
 int sizeX = 300;
@@ -53,7 +52,7 @@ SDL_Renderer* renderer;
 
 bool InitEverything();
 bool InitSDL();
-bool CreateWindow();
+bool mehCreateWindow();
 bool CreateRenderer();
 void SetupRenderer();
 
@@ -61,56 +60,6 @@ void Render();
 void RunGame();
 
 SDL_Rect playerPos;
-
-int main(int argc, char** argv) {
-    uv_tty_t tty;
-
-    uv_tty_init(uv_default_loop(), &tty, 0, 1);
-    uv_tty_set_mode(&tty, UV_TTY_MODE_NORMAL);
-
-    // setup reading callback
-    uv_read_start((uv_stream_t*)&tty, tty_alloc, on_console_message);
-
-    std::string test = "";
-
-    test.append("==========          CLIENT         ===============\n");
-    test.append("==                                              ==\n");
-    test.append("==                 ¯\\_(ツ)_/¯                   ==\n");
-    test.append("==                                              ==\n");
-    test.append("==================================================\n");
-
-    printf("%s\n\n", test.c_str());
-
-    librg::core::set_mode(librg::core::mode_client);
-    librg::core::set_tick_cb(ontick);
-
-    librg::entities_initialize();
-    librg::events_initialize();
-    librg::network_initialize();
-    librg::resources_initialize();
-
-    // a game ticker
-    if ( !InitEverything() ) 
-        return -1;
-
-
-    // Initlaize our playe
-    playerPos.x = 20;
-    playerPos.y = 20;
-    playerPos.w = 20;
-    playerPos.h = 20;
-
-    RunGame();
-
-    librg::entities_terminate();
-    librg::events_terminate();
-    librg::network_terminate();
-    librg::resources_terminate();
-
-    librg::core::client_terminate();
-
-    return 0;
-}
 
 void Render()
 {
@@ -135,7 +84,7 @@ bool InitEverything()
     if ( !InitSDL() )
         return false;
 
-    if ( !CreateWindow() )
+    if ( !mehCreateWindow() )
         return false;
 
     if ( !CreateRenderer() )
@@ -156,7 +105,7 @@ bool InitSDL()
     return true;
 }
 
-bool CreateWindow()
+bool mehCreateWindow()
 {
     window = SDL_CreateWindow( "Server", posX, posY, sizeX, sizeY, 0 );
 
@@ -232,4 +181,54 @@ void RunGame()
         // Add a 16msec delay to make our game run at ~60 fps
         SDL_Delay( 16 );
     }
+}
+
+int main(int argc, char *args[]) {
+    uv_tty_t tty;
+
+    uv_tty_init(uv_default_loop(), &tty, 0, 1);
+    uv_tty_set_mode(&tty, UV_TTY_MODE_NORMAL);
+
+    // setup reading callback
+    uv_read_start((uv_stream_t*)&tty, tty_alloc, on_console_message);
+
+    std::string test = "";
+
+    test.append("==========          CLIENT         ===============\n");
+    test.append("==                                              ==\n");
+    test.append("==                 ¯\\_(ツ)_/¯                   ==\n");
+    test.append("==                                              ==\n");
+    test.append("==================================================\n");
+
+    printf("%s\n\n", test.c_str());
+
+    librg::core::set_mode(librg::core::mode_client);
+    librg::core::set_tick_cb(ontick);
+
+    librg::entities_initialize();
+    librg::events_initialize();
+    librg::network_initialize();
+    librg::resources_initialize();
+
+    // a game ticker
+    if (!InitEverything())
+     return -1;
+
+
+    // Initlaize our playe
+    playerPos.x = 20;
+    playerPos.y = 20;
+    playerPos.w = 20;
+    playerPos.h = 20;
+
+    RunGame();
+
+    librg::entities_terminate();
+    librg::events_terminate();
+    librg::network_terminate();
+    librg::resources_terminate();
+
+    librg::core::client_terminate();
+
+    return 0;
 }

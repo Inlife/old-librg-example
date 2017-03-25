@@ -20,6 +20,8 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+set(SDL_SHARED_ENABLED_BY_DEFAULT OFF CACHE BOOL "Generate the DLL project if true.")
+
 ###
 # Compile vendor dependencies
 ###
@@ -51,4 +53,4 @@ add_executable(client ${CLIENT_FILES})
 # Linking libraries
 ###
 target_link_libraries(server librg)
-target_link_libraries(client librg SDL2-static)
+target_link_libraries(client librg SDL2main SDL2-static)
