@@ -1,4 +1,4 @@
-﻿#define RGSERVER
+#define RGSERVER
 
 #include <librg/core/server.h>
 #include <librg/events.h>
@@ -53,6 +53,7 @@ int main(int argc, char** argv)
     librg::resources_initialize();
     librg::streamer_initialize(4000, 4000);
 
+    librg::network::server(7750);
     librg::core::set_tick_cb(ontick);
     librg::core::server(argc, argv);
 

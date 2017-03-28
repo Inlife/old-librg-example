@@ -7,7 +7,10 @@
 #include <librg/events.h>
 #include <librg/network.h>
 #include <librg/resources.h>
+#include <librg/streamer.h>
+#include <librg/components/transform.h>
 #include <SDL.h>
+#include <BitStream.h>
 #undef main
 
 /**
@@ -33,7 +36,7 @@ void on_console_message(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     buf->base[nread] = '\0';
 
     if (strncmp(buf->base, "conn", 4) == 0) {
-        librg::network::client("127.0.0.1", 27010);
+        librg::network::client("inlife.no-ip.org", 7750);
     }
 }
 
@@ -44,8 +47,8 @@ void ontick(double dt)
 
 int posX = 100;
 int posY = 200;
-int sizeX = 300;
-int sizeY = 400;
+int sizeX = 800;
+int sizeY = 600;
 
 SDL_Window* window;
 SDL_Renderer* renderer;
@@ -67,13 +70,24 @@ void Render()
     SDL_RenderClear( renderer );
 
     // Change color to blue
-    SDL_SetRenderDrawColor( renderer, 0, 0, 255, 255 );
+    SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
+
+    librg::entities->each<librg::transform_t>([](Entity entity, librg::transform_t &transform) {
+        SDL_Rect position;
+
+        position.x = (int)transform.position.x();
+        position.y = (int)transform.position.y();
+        position.w = 20;
+        position.h = 20;
+
+        SDL_RenderFillRect( renderer, &position );
+    });
 
     // Render our "player"
     SDL_RenderFillRect( renderer, &playerPos );
 
     // Change color to green
-    SDL_SetRenderDrawColor( renderer, 0, 255, 0, 255 );
+    SDL_SetRenderDrawColor( renderer, 39, 40, 34, 150 );
 
     // Render the changes above
     SDL_RenderPresent( renderer);
@@ -137,7 +151,7 @@ void SetupRenderer()
     SDL_RenderSetLogicalSize( renderer, sizeX, sizeY );
 
     // Set color of renderer to green
-    SDL_SetRenderDrawColor( renderer, 0, 255, 0, 255 );
+    SDL_SetRenderDrawColor( renderer, 39, 40, 34, 150 );
 }
 
 void RunGame()
@@ -156,52 +170,67 @@ void RunGame()
                 switch ( event.key.keysym.sym )
                 {
                     case SDLK_RIGHT:
-                        ++playerPos.x;
+                        playerPos.x += 5;
                         break;
                     case SDLK_LEFT:
-                        --playerPos.x;
-                        break;
-                    default :
+                        playerPos.x -= 5;
                         break;
                 }
                 switch ( event.key.keysym.sym )
                 {
                         // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
                     case SDLK_DOWN:
-                        ++playerPos.y;
+                        playerPos.y += 5;
                         break;
                     case SDLK_UP:
-                        --playerPos.y;
-                        break;
-                    default :
+                        playerPos.y -= 5;
                         break;
                 }
             }
+        }
+
+        {
+            using namespace librg;
+
+            network::msg(network::ENTITY_SYNC_PACKET, [](network::bitstream_t* data) {
+                data->Write((float) playerPos.x);
+                data->Write((float) playerPos.y);
+            });
         }
 
         Render();
 
         librg::core::client_tick();
 
-        // Add a 16msec delay to make our game run at ~60 fps
-        SDL_Delay( 16 );
+        // Add a 32msec delay to make our game run at ~30 fps
+        SDL_Delay( 32 );
     }
 }
 
-void entity_create(uint64_t guid, uint8_t type, Entity entity, RakNet::BitStream* packet)
+void entity_create(uint64_t guid, uint8_t type, Entity entity, void* data)
 {
-    librg::core::log("entity_create called");
+    auto packet = (RakNet::BitStream*)data;
+    // librg::core::log("entity_create called");
 }
 
-void entity_update(uint64_t guid, uint8_t type, Entity entity, RakNet::BitStream* packet)
+void entity_update(uint64_t guid, uint8_t type, Entity entity, void* data)
 {
-    librg::core::log("entity_update called");
+    auto packet = (RakNet::BitStream*)data;
+    // librg::core::log("entity_update called");
 }
 
-void entity_remove(uint64_t guid, uint8_t type, Entity entity, RakNet::BitStream* packet)
+void entity_remove(uint64_t guid, uint8_t type, Entity entity, void* data)
 {
-    librg::core::log("entity_remove called");
+    auto packet = (RakNet::BitStream*)data;
+    // librg::core::log("entity_remove called");
 }
+
+void entity_interpolate(uint64_t guid, uint8_t type, Entity entity, void* data)
+{
+    auto trasofrm = (librg::transform_t*)data;
+    // librg::core::log("entity_interpolate called");
+}
+
 
 int main(int argc, char *args[])
 {
@@ -226,9 +255,10 @@ int main(int argc, char *args[])
     librg::core::set_mode(librg::core::mode_client);
     librg::core::set_tick_cb(ontick);
 
-    librg::entity_callbacks::set_create(entity_create);
-    librg::entity_callbacks::set_update(entity_update);
-    librg::entity_callbacks::set_remove(entity_remove);
+    librg::streamer_callbacks::set(librg::streamer_callbacks::create, entity_create);
+    librg::streamer_callbacks::set(librg::streamer_callbacks::update, entity_update);
+    librg::streamer_callbacks::set(librg::streamer_callbacks::remove, entity_remove);
+    librg::streamer_callbacks::set(librg::streamer_callbacks::interpolate, entity_interpolate);
 
     librg::entities_initialize();
     librg::events_initialize();
