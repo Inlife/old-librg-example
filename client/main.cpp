@@ -200,6 +200,7 @@ void RunGame()
         librg::core::client_tick();
 
         // Add a 32msec delay to make our game run at ~30 fps
+        // Add a 16msec delay to make our game run at ~60 fps
         SDL_Delay( 16 );
     }
 }

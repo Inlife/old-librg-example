@@ -1,6 +1,6 @@
 [submodule "vendor/reguider"]
 	path = vendor/reguider
-	url = git@gitlab.com:reguider/reguider.git
+	url = git@github.com:zaklaus/reguider.git
 [submodule "vendor/SDL"]
 	path = vendor/SDL
 	url = https://github.com/SDL-mirror/SDL.git
