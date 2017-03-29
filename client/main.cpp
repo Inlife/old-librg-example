@@ -40,10 +40,6 @@ void on_console_message(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     }
 }
 
-void ontick(double dt)
-{
-    // printf("tick?\n");
-}
 
 int posX = 100;
 int posY = 200;
@@ -63,11 +59,22 @@ void Render();
 void RunGame();
 
 SDL_Rect playerPos;
+SDL_Rect playerRange;
 
 void Render()
 {
     // Clear the window and make it all green
     SDL_RenderClear( renderer );
+
+    SDL_SetRenderDrawColor( renderer, 75, 75, 76, 10 );
+
+    playerRange.x = playerPos.x - 250;
+    playerRange.y = playerPos.y - 250;
+    playerRange.w = 500;
+    playerRange.h = 500;
+
+    // Render our "player"
+    SDL_RenderFillRect( renderer, &playerRange );
 
     // Change color to blue
     SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
@@ -83,7 +90,6 @@ void Render()
         SDL_RenderFillRect( renderer, &position );
     });
 
-    // Render our "player"
     SDL_RenderFillRect( renderer, &playerPos );
 
     // Change color to green
@@ -189,21 +195,12 @@ void RunGame()
             }
         }
 
-        {
-            using namespace librg;
-
-            network::msg(network::ENTITY_SYNC_PACKET, [](network::bitstream_t* data) {
-                data->Write((float) playerPos.x);
-                data->Write((float) playerPos.y);
-            });
-        }
-
         Render();
 
         librg::core::client_tick();
 
         // Add a 32msec delay to make our game run at ~30 fps
-        SDL_Delay( 32 );
+        SDL_Delay( 16 );
     }
 }
 
@@ -227,8 +224,18 @@ void entity_remove(uint64_t guid, uint8_t type, Entity entity, void* data)
 
 void entity_interpolate(uint64_t guid, uint8_t type, Entity entity, void* data)
 {
-    auto trasofrm = (librg::transform_t*)data;
+    auto transform = (librg::transform_t*)data;
     // librg::core::log("entity_interpolate called");
+}
+
+void ontick(double dt)
+{
+    using namespace librg;
+
+    network::msg(network::ENTITY_SYNC_PACKET, [](network::bitstream_t* data) {
+        data->Write((float) playerPos.x);
+        data->Write((float) playerPos.y);
+    });
 }
 
 
@@ -269,6 +276,7 @@ int main(int argc, char *args[])
     if (!InitEverything())
      return -1;
 
+    librg::network::client("inlife.no-ip.org", 7750);
 
     // Initlaize our playe
     playerPos.x = 20;
