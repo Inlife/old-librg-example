@@ -208,7 +208,7 @@ void RunGame()
 void entity_create(uint64_t guid, uint8_t type, Entity entity, void* data)
 {
     auto packet = (RakNet::BitStream*)data;
-    // librg::core::log("entity_create called");
+    librg::core::log("entity_create called");
 }
 
 void entity_update(uint64_t guid, uint8_t type, Entity entity, void* data)
