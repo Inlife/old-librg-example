@@ -43,6 +43,11 @@ include_directories(
 file(GLOB_RECURSE SERVER_FILES "${PROJECT_SOURCE_DIR}/server/*.cpp")
 file(GLOB_RECURSE CLIENT_FILES "${PROJECT_SOURCE_DIR}/client/*.cpp")
 
+if(MSVC)
+    GroupSources(client)
+    GroupSources(server)
+endif()
+
 ###
 # Adding executables
 ###
