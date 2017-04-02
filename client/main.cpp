@@ -1,4 +1,4 @@
-#include <uv.h>
+﻿#include <uv.h>
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -36,7 +36,9 @@ void on_console_message(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     buf->base[nread] = '\0';
 
     if (strncmp(buf->base, "conn", 4) == 0) {
-        librg::network::client("inlife.no-ip.org", 7750);
+        std::string ip;
+        std::cin >> ip;
+        librg::network::client(ip.c_str(), 7750);
     }
 }
 
@@ -140,7 +142,7 @@ bool mehCreateWindow()
 
 bool CreateRenderer()
 {
-    renderer = SDL_CreateRenderer( window, -1, 0 );
+    renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_PRESENTVSYNC );
 
     if ( renderer == nullptr )
     {
@@ -195,13 +197,11 @@ void RunGame()
             }
         }
 
+        librg::core::client_tick();
+        
         Render();
 
-        librg::core::client_tick();
-
-        // Add a 32msec delay to make our game run at ~30 fps
-        // Add a 16msec delay to make our game run at ~60 fps
-        SDL_Delay( 16 );
+        //SDL_Delay( 16 );
     }
 }
 
@@ -214,13 +214,13 @@ void entity_create(uint64_t guid, uint8_t type, Entity entity, void* data)
 void entity_update(uint64_t guid, uint8_t type, Entity entity, void* data)
 {
     auto packet = (RakNet::BitStream*)data;
-    // librg::core::log("entity_update called");
+    //librg::core::log("entity_update called");
 }
 
 void entity_remove(uint64_t guid, uint8_t type, Entity entity, void* data)
 {
     auto packet = (RakNet::BitStream*)data;
-    // librg::core::log("entity_remove called");
+    librg::core::log("entity_remove called");
 }
 
 void entity_interpolate(uint64_t guid, uint8_t type, Entity entity, void* data)
@@ -277,7 +277,7 @@ int main(int argc, char *args[])
     if (!InitEverything())
      return -1;
 
-    librg::network::client("inlife.no-ip.org", 7750);
+    librg::network::client("localhost", 7750);
 
     // Initlaize our playe
     playerPos.x = 20;
