@@ -11,6 +11,7 @@
 #include <librg/components/transform.h>
 #include <SDL.h>
 #include <BitStream.h>
+#include <messages.h>
 #undef main
 
 /**
@@ -162,6 +163,8 @@ void SetupRenderer()
     SDL_SetRenderDrawColor( renderer, 39, 40, 34, 150 );
 }
 
+bool shooting = false;
+
 void RunGame()
 {
     bool loop = true;
@@ -193,6 +196,13 @@ void RunGame()
                     case SDLK_UP:
                         playerPos.y -= 5;
                         break;
+                }
+                switch (event.key.keysym.sym)
+                {
+                    // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
+                case SDLK_SPACE:
+                    shooting = 1;
+                    break;
                 }
             }
         }
@@ -233,10 +243,17 @@ void ontick(double dt)
 {
     using namespace librg;
 
-    network::msg(network::ENTITY_SYNC_PACKET, [](network::bitstream_t* data) {
+    network::msg(GAME_SYNC_PACKET, [](network::bitstream_t* data) {
         data->Write((float) playerPos.x);
         data->Write((float) playerPos.y);
     });
+
+    if (shooting) {
+        network::msg(GAME_ON_SHOOT, [](network::bitstream_t* data) {
+
+        });
+        shooting = false;
+    }
 }
 
 

@@ -1,4 +1,4 @@
-###
+﻿###
 # CMake entry point
 ###
 cmake_minimum_required (VERSION 2.8)
@@ -35,6 +35,7 @@ include_directories(
     vendor/reguider/include
     vendor/SDL/include
     server/
+    shared/
 )
 
 ###
@@ -46,6 +47,7 @@ file(GLOB_RECURSE CLIENT_FILES "${PROJECT_SOURCE_DIR}/client/*.cpp")
 if(MSVC)
     GroupSources(client)
     GroupSources(server)
+    GroupSources(shared)
 endif()
 
 ###

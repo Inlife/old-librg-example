@@ -1,4 +1,4 @@
-#define RGSERVER
+﻿#define RGSERVER
 
 #include <librg/core/server.h>
 #include <librg/events.h>
@@ -7,6 +7,8 @@
 #include <librg/network.h>
 #include <librg/resources.h>
 #include <librg/streamer.h>
+
+#include <messages.h>
 
 // #include <entityx/entityx.h>
 // #include <entityx/deps/Dependencies.h>
@@ -35,6 +37,27 @@ void ontick(double dt)
     // librg::core::log("ticking\n");
 }
 
+struct hero_t {
+    hero_t() : attackSpeed(1.f), ammo(42) { }
+    hero_t(float attackSpeed, int ammo) : attackSpeed(attackSpeed), ammo(ammo) { }
+
+    float attackSpeed;
+    int ammo;
+};
+
+void* on_client_connected_proxy(const void* data, Sqrat::Array *array)
+{
+    // NOTE(zaklaus): Expect only native calls!
+    return (void*)data;
+}
+
+void on_client_connected_cb(const void* data, void* /* blob */)
+{
+    auto entity = librg::entities->get((Entity::Id)*(uint64_t*)data);
+    entity.assign<hero_t>();
+    librg::core::log("New hero came!");
+}
+
 int main(int argc, char** argv)
 {
     std::string test = "";
@@ -47,11 +70,31 @@ int main(int argc, char** argv)
 
     printf("%s\n\n", test.c_str());
 
+    using namespace librg;
+
     librg::entities_initialize();
     librg::events_initialize();
     librg::network_initialize();
     librg::resources_initialize();
     librg::streamer_initialize(4000, 4000);
+
+    librg::events::add("onClientConnect", on_client_connected_cb, on_client_connected_proxy);
+
+    librg::network::add(GAME_ON_SHOOT, [](network::bitstream_t *data, network::packet_t *packet) {
+        librg::core::log("Player shoots! BANG BANG!");
+    });
+
+    librg::network::add(GAME_SYNC_PACKET, [](librg::network::bitstream_t *data, network::packet_t *packet) {
+        using namespace librg;
+        float x, y; 
+
+        data->Read(x);
+        data->Read(y);
+
+        auto transform = network::clients[packet->guid].component<transform_t>();
+
+        transform->position = vectorial::vec3f(x, y, transform->position.z());
+    });
 
     librg::network::server(7750);
     librg::core::set_tick_cb(ontick);
