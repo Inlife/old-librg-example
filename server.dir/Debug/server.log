@@ -1,5 +1,0 @@
-﻿  main.cpp
-  set NOMINMAX as preprocessor macro, undefining min/max 
-F:\server-test\server\main.cpp(46): warning C4566: character represented by universal-character-name '\u00AF' cannot be represented in the current code page (1250)
-F:\server-test\server\main.cpp(46): warning C4566: character represented by universal-character-name '\u30C4' cannot be represented in the current code page (1250)
-  server.vcxproj -> F:\server-test\build\Debug\server.exe
