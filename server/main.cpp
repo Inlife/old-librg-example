@@ -9,6 +9,7 @@
 #include <librg/streamer.h>
 
 #include <messages.h>
+#include <types.h>
 
 // #include <entityx/entityx.h>
 // #include <entityx/deps/Dependencies.h>
@@ -34,7 +35,15 @@
 
 void ontick(double dt)
 {
-    // librg::core::log("ticking\n");
+    librg::entities->each<bomb_t>([dt](Entity entity, bomb_t& bomb) {
+        if (bomb.timeLeft < 0) {
+            librg::streamer::remove(entity);
+            entity.destroy();
+        }
+        else {
+            bomb.timeLeft -= dt;
+        }
+    });
 }
 
 struct hero_t {
@@ -80,12 +89,33 @@ int main(int argc, char** argv)
 
     librg::events::add("onClientConnect", on_client_connected_cb, on_client_connected_proxy);
 
-    librg::network::add(GAME_ON_SHOOT, [](network::bitstream_t *data, network::packet_t *packet) {
-        librg::core::log("Player shoots! BANG BANG!");
+    librg::network::set_sync_cb(librg::core::rgmode::mode_server, [](network::bitstream_t* data, Entity entity, int type) {
+        switch (type) {
+        
+        case TYPE_BOMB:
+        {
+            auto bomb = entity.component<bomb_t>();
+            data->Write(bomb->startTime);
+            data->Write(bomb->timeLeft);
+        }break;
+        }
     });
 
-    librg::network::add(GAME_SYNC_PACKET, [](librg::network::bitstream_t *data, network::packet_t *packet) {
-        using namespace librg;
+    librg::network::add(GAME_ON_SHOOT, [](network::bitstream_t *data, network::packet_t *packet) {
+        librg::core::log("Player shoots! BANG BANG!");
+
+        auto player = network::clients[packet->guid];
+        auto plTransform = player.component<transform_t>();
+
+        auto entity = entities->create();
+        entity.assign<transform_t>(*plTransform);
+        entity.assign<bomb_t>(4);
+
+        auto streamable = entity.assign<streamable_t>();
+        streamable->type = TYPE_BOMB;
+    });
+
+    librg::network::add(GAME_SYNC_PACKET, [](network::bitstream_t *data, network::packet_t *packet) {
         float x, y; 
 
         data->Read(x);

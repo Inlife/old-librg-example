@@ -12,6 +12,7 @@
 #include <SDL.h>
 #include <BitStream.h>
 #include <messages.h>
+#include <types.h>
 #undef main
 
 /**
@@ -79,8 +80,20 @@ void Render()
     // Render our "player"
     SDL_RenderFillRect( renderer, &playerRange );
 
-    // Change color to blue
-    SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
+    librg::entities->each<bomb_t, librg::transform_t>([](Entity entity, bomb_t& bomb, librg::transform_t& transform) {
+        SDL_Rect position;
+
+        position.x = (int)transform.position.x();
+        position.y = (int)transform.position.y();
+        position.w = 20;
+        position.h = 20;
+
+        SDL_SetRenderDrawColor(renderer, 255 * (1 - bomb.startTime / bomb.timeLeft), 0, 0, 255);
+
+        SDL_RenderFillRect(renderer, &position);
+    });
+
+    SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
 
     librg::entities->each<librg::transform_t>([](Entity entity, librg::transform_t &transform) {
         SDL_Rect position;
@@ -250,10 +263,14 @@ void ontick(double dt)
 
     if (shooting) {
         network::msg(GAME_ON_SHOOT, [](network::bitstream_t* data) {
-
+            // No stuff here yet. welp...
         });
         shooting = false;
     }
+
+    librg::entities->each<bomb_t>([dt](Entity entity, bomb_t& bomb) {
+        bomb.timeLeft -= dt;
+    });
 }
 
 
@@ -284,6 +301,20 @@ int main(int argc, char *args[])
     librg::streamer_callbacks::set(librg::streamer_callbacks::update, entity_update);
     librg::streamer_callbacks::set(librg::streamer_callbacks::remove, entity_remove);
     librg::streamer_callbacks::set(librg::streamer_callbacks::interpolate, entity_interpolate);
+
+    librg::network::set_sync_cb(librg::core::rgmode::mode_client, [](librg::network::bitstream_t *data, Entity entity, int type) {
+        switch (type) {
+        case TYPE_BOMB:
+        {
+            float timeLeft, startTime;
+            data->Read(startTime);
+            data->Read(timeLeft);
+            auto bomb = entity.assign<bomb_t>(timeLeft);
+            bomb->startTime = startTime;
+        }break;
+
+        }
+    });
 
     librg::entities_initialize();
     librg::events_initialize();
