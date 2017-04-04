@@ -80,20 +80,8 @@ void Render()
     // Render our "player"
     SDL_RenderFillRect( renderer, &playerRange );
 
-    librg::entities->each<bomb_t, librg::transform_t>([](Entity entity, bomb_t& bomb, librg::transform_t& transform) {
-        SDL_Rect position;
-
-        position.x = (int)transform.position.x();
-        position.y = (int)transform.position.y();
-        position.w = 20;
-        position.h = 20;
-
-        SDL_SetRenderDrawColor(renderer, 255 * (1 - bomb.startTime / bomb.timeLeft), 0, 0, 255);
-
-        SDL_RenderFillRect(renderer, &position);
-    });
-
-    SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
+    // Change color to blue
+    SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
 
     librg::entities->each<librg::transform_t>([](Entity entity, librg::transform_t &transform) {
         SDL_Rect position;
@@ -105,6 +93,21 @@ void Render()
 
         SDL_RenderFillRect( renderer, &position );
     });
+
+    librg::entities->each<bomb_t, librg::transform_t>([](Entity entity, bomb_t& bomb, librg::transform_t& transform) {
+        SDL_Rect position;
+
+        position.x = (int)transform.position.x();
+        position.y = (int)transform.position.y();
+        position.w = 20;
+        position.h = 20;
+
+        SDL_SetRenderDrawColor(renderer, 255*(1 - bomb.timeLeft/ bomb.startTime), 0, 0, 255);
+
+        SDL_RenderFillRect(renderer, &position);
+    });
+
+    SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
 
     SDL_RenderFillRect( renderer, &playerPos );
 
