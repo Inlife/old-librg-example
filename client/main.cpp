@@ -329,6 +329,8 @@ void entity_remove(callbacks::evt_t* evt)
             for (auto &exp : explosions) {
                 if (exp.impact < 0) {
                     exp = explosion;
+                    needsNew = false;
+                    break;
                 }
             }
 
