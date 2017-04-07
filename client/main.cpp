@@ -1,49 +1,17 @@
-﻿#include <uv.h>
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
-#include <librg/core/client.h>
-#include <librg/entities.h>
-#include <librg/events.h>
-#include <librg/network.h>
-#include <librg/resources.h>
-#include <librg/streamer.h>
-#include <librg/components/transform.h>
+
+#include <uv.h>
 #include <SDL.h>
-#include <BitStream.h>
+#include <librg/librg.h>
+#include <librg/components/transform.h>
+
 #include <messages.h>
 #include <types.h>
 #undef main
 
-/**
- * Alloc callback for allocating input memory
- * @param handle         tty handle
- * @param suggested_size suggensted size by uv (65536 in most cases)
- * @param buf            buffer, where data will be written to, and read from by us
- */
-static void tty_alloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
-{
-    buf->base = new char[1024];
-    buf->len = 1024;
-}
-
-/**
- * On user console message
- * @param stream tty handle
- * @param nread  size of string
- * @param buf    buffer with data
- */
-void on_console_message(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
-{
-    buf->base[nread] = '\0';
-
-    if (strncmp(buf->base, "conn", 4) == 0) {
-        std::string ip;
-        std::cin >> ip;
-        librg::network::client(ip.c_str(), 7750);
-    }
-}
-
+using namespace librg;
 
 int posX = 100;
 int posY = 200;
@@ -86,8 +54,8 @@ void Render()
     librg::entities->each<librg::transform_t>([](Entity entity, librg::transform_t &transform) {
         SDL_Rect position;
 
-        position.x = (int)transform.position.x();
-        position.y = (int)transform.position.y();
+        position.x = (int)transform.position.x() - 10;
+        position.y = (int)transform.position.y() - 10;
         position.w = 20;
         position.h = 20;
 
@@ -97,8 +65,8 @@ void Render()
     librg::entities->each<bomb_t, librg::transform_t>([](Entity entity, bomb_t& bomb, librg::transform_t& transform) {
         SDL_Rect position;
 
-        position.x = (int)transform.position.x();
-        position.y = (int)transform.position.y();
+        position.x = (int)transform.position.x() - 10;
+        position.y = (int)transform.position.y() - 10;
         position.w = 20;
         position.h = 20;
 
@@ -109,7 +77,14 @@ void Render()
 
     SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
 
-    SDL_RenderFillRect( renderer, &playerPos );
+    SDL_Rect position;
+
+    position.x = playerPos.x - 10;
+    position.y = playerPos.y - 10;
+    position.w = 20;
+    position.h = 20;
+
+    SDL_RenderFillRect( renderer, &position );
 
     // Change color to green
     SDL_SetRenderDrawColor( renderer, 39, 40, 34, 150 );
@@ -223,41 +198,66 @@ void RunGame()
             }
         }
 
-        librg::core::client_tick();
-        
+        librg::core::tick();
+
         Render();
 
         //SDL_Delay( 16 );
     }
 }
 
-void entity_create(uint64_t guid, uint8_t type, Entity entity, void* data)
+/**
+ * Entity add to streamer
+ */
+void entity_create(callbacks::evt_t* evt)
 {
-    auto packet = (RakNet::BitStream*)data;
+    auto event = (callbacks::evt_create_t*) evt;
     librg::core::log("entity_create called");
+
+    switch (event->type) {
+        case TYPE_BOMB:
+        {
+            float timeLeft, startTime;
+            event->data->Read(startTime);
+            event->data->Read(timeLeft);
+
+            auto bomb = event->entity.assign<bomb_t>(timeLeft);
+            bomb->startTime = startTime;
+        } break;
+    }
 }
 
-void entity_update(uint64_t guid, uint8_t type, Entity entity, void* data)
+/**
+ * Entity update in streamer
+ */
+void entity_update(callbacks::evt_t* evt)
 {
-    auto packet = (RakNet::BitStream*)data;
-    //librg::core::log("entity_update called");
+    auto event = (callbacks::evt_update_t*) evt;
+
+    // librg::core::log("entity_create update");
 }
 
-void entity_remove(uint64_t guid, uint8_t type, Entity entity, void* data)
+/**
+ * Entity remove from streamer
+ */
+void entity_remove(callbacks::evt_t* evt)
 {
-    auto packet = (RakNet::BitStream*)data;
+    auto event = (callbacks::evt_remove_t*) evt;
     librg::core::log("entity_remove called");
 }
 
-void entity_interpolate(uint64_t guid, uint8_t type, Entity entity, void* data)
+/**
+ * Entity interpolate callback
+ */
+void entity_inter(callbacks::evt_t* evt)
 {
-    auto transform = (librg::transform_t*)data;
+    auto event = (callbacks::evt_inter_t*) evt;
     // librg::core::log("entity_interpolate called");
 }
 
-void ontick(double dt)
+void ontick(callbacks::evt_t* evt)
 {
-    using namespace librg;
+    auto event = (callbacks::evt_tick_t*) evt;
 
     network::msg(GAME_SYNC_PACKET, [](network::bitstream_t* data) {
         data->Write((float) playerPos.x);
@@ -271,66 +271,40 @@ void ontick(double dt)
         shooting = false;
     }
 
-    librg::entities->each<bomb_t>([dt](Entity entity, bomb_t& bomb) {
-        bomb.timeLeft -= dt;
+    librg::entities->each<bomb_t>([event](Entity entity, bomb_t& bomb) {
+        bomb.timeLeft -= event->dt;
     });
 }
 
 
 int main(int argc, char *args[])
 {
-    uv_tty_t tty;
-
-    uv_tty_init(uv_default_loop(), &tty, 0, 1);
-    uv_tty_set_mode(&tty, UV_TTY_MODE_NORMAL);
-
-    // setup reading callback
-    uv_read_start((uv_stream_t*)&tty, tty_alloc, on_console_message);
-
     std::string test = "";
-
     test.append("==========          CLIENT         ===============\n");
     test.append("==                                              ==\n");
     test.append("==                 ¯\\_(ツ)_/¯                   ==\n");
     test.append("==                                              ==\n");
     test.append("==================================================\n");
-
     printf("%s\n\n", test.c_str());
 
-    librg::core::set_mode(librg::core::mode_client);
-    librg::core::set_tick_cb(ontick);
+    // setup manual client mode
+    librg::core_initialize(librg::mode_client_manual);
 
-    librg::streamer_callbacks::set(librg::streamer_callbacks::create, entity_create);
-    librg::streamer_callbacks::set(librg::streamer_callbacks::update, entity_update);
-    librg::streamer_callbacks::set(librg::streamer_callbacks::remove, entity_remove);
-    librg::streamer_callbacks::set(librg::streamer_callbacks::interpolate, entity_interpolate);
+    // setup callbacks
+    librg::callbacks::set(librg::callbacks::tick, ontick);
+    // librg::callbacks::set(librg::callbacks::inter, entity_inter);
+    librg::callbacks::set(librg::callbacks::create, entity_create);
+    librg::callbacks::set(librg::callbacks::update, entity_update);
+    librg::callbacks::set(librg::callbacks::remove, entity_remove);
 
-    librg::network::set_sync_cb(librg::core::rgmode::mode_client, [](librg::network::bitstream_t *data, Entity entity, int type) {
-        switch (type) {
-        case TYPE_BOMB:
-        {
-            float timeLeft, startTime;
-            data->Read(startTime);
-            data->Read(timeLeft);
-            auto bomb = entity.assign<bomb_t>(timeLeft);
-            bomb->startTime = startTime;
-        }break;
+    if (!InitEverything()) {
+        return -1;
+    }
 
-        }
-    });
+    // start the client (network connection)
+    librg::core::start("localhost", 7750);
 
-    librg::entities_initialize();
-    librg::events_initialize();
-    librg::network_initialize();
-    librg::resources_initialize();
-
-    // a game ticker
-    if (!InitEverything())
-     return -1;
-
-    librg::network::client("localhost", 7750);
-
-    // Initlaize our playe
+    // Initlaize our player
     playerPos.x = 20;
     playerPos.y = 20;
     playerPos.w = 20;
@@ -338,12 +312,6 @@ int main(int argc, char *args[])
 
     RunGame();
 
-    librg::entities_terminate();
-    librg::events_terminate();
-    librg::network_terminate();
-    librg::resources_terminate();
-
-    librg::core::client_terminate();
-
+    librg::core_terminate();
     return 0;
 }
