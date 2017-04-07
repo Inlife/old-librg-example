@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <string.h>
 #include <iostream>
 
@@ -32,6 +32,14 @@ void RunGame();
 
 SDL_Rect playerPos;
 SDL_Rect playerRange;
+entity_t playerEntity = {};
+
+struct explosion_t {
+    vec3f position;
+    float impact;
+};
+
+std::vector<explosion_t> explosions;
 
 void Render()
 {
@@ -51,7 +59,7 @@ void Render()
     // Change color to blue
     SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
 
-    librg::entities->each<librg::transform_t>([](Entity entity, librg::transform_t &transform) {
+    librg::entities->each<librg::transform_t, hero_t>([](Entity entity, librg::transform_t& transform, hero_t& hero) {
         SDL_Rect position;
 
         position.x = (int)transform.position.x() - 10;
@@ -60,6 +68,21 @@ void Render()
         position.h = 20;
 
         SDL_RenderFillRect( renderer, &position );
+
+        if (hero.HP > 0) {
+            position.h = 5;
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150);
+            SDL_RenderFillRect(renderer, &position);
+
+            position.w = 20 * (hero.HP / (float)hero.maxHP);
+
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 150);
+            SDL_RenderFillRect(renderer, &position);
+        }
+        else {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150);
+            SDL_RenderFillRect(renderer, &position);
+        }
     });
 
     librg::entities->each<bomb_t, librg::transform_t>([](Entity entity, bomb_t& bomb, librg::transform_t& transform) {
@@ -85,6 +108,37 @@ void Render()
     position.h = 20;
 
     SDL_RenderFillRect( renderer, &position );
+
+    // Health bar
+    if (playerEntity) {
+        auto hero = playerEntity.component<hero_t>();
+        if (hero->HP > 0) {
+            position.h = 5;
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150);
+            SDL_RenderFillRect(renderer, &position);
+
+            position.w = 20 * (hero->HP / (float)hero->maxHP);
+
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 150);
+            SDL_RenderFillRect(renderer, &position);
+        }
+        else {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150);
+            SDL_RenderFillRect(renderer, &position);
+        }
+    }
+
+    for (auto &explosion : explosions) {
+        if (explosion.impact < 0) continue;
+
+        position.x = explosion.position.x() - explosion.impact / 2.f;
+        position.y = explosion.position.y() - explosion.impact / 2.f;
+        position.w = explosion.impact;
+        position.h = explosion.impact;
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 150);
+        SDL_RenderFillRect(renderer, &position);
+    }
 
     // Change color to green
     SDL_SetRenderDrawColor( renderer, 39, 40, 34, 150 );
@@ -167,33 +221,41 @@ void RunGame()
         {
             if ( event.type == SDL_QUIT )
                 loop = false;
-            else if ( event.type == SDL_KEYDOWN )
-            {
-                switch ( event.key.keysym.sym )
-                {
-                    case SDLK_RIGHT:
-                        playerPos.x += 5;
-                        break;
-                    case SDLK_LEFT:
-                        playerPos.x -= 5;
-                        break;
-                }
-                switch ( event.key.keysym.sym )
-                {
-                        // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
-                    case SDLK_DOWN:
-                        playerPos.y += 5;
-                        break;
-                    case SDLK_UP:
-                        playerPos.y -= 5;
-                        break;
-                }
-                switch (event.key.keysym.sym)
-                {
-                    // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
-                case SDLK_SPACE:
-                    shooting = 1;
-                    break;
+
+
+            if (playerEntity) {
+                auto hero = playerEntity.component<hero_t>();
+
+                if (hero->HP > 0) {
+                    if (event.type == SDL_KEYDOWN)
+                    {
+                        switch (event.key.keysym.sym)
+                        {
+                        case SDLK_RIGHT:
+                            playerPos.x += 5;
+                            break;
+                        case SDLK_LEFT:
+                            playerPos.x -= 5;
+                            break;
+                        }
+                        switch (event.key.keysym.sym)
+                        {
+                            // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
+                        case SDLK_DOWN:
+                            playerPos.y += 5;
+                            break;
+                        case SDLK_UP:
+                            playerPos.y -= 5;
+                            break;
+                        }
+                        switch (event.key.keysym.sym)
+                        {
+                            // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
+                        case SDLK_SPACE:
+                            shooting = 1;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -215,6 +277,16 @@ void entity_create(callbacks::evt_t* evt)
     librg::core::log("entity_create called");
 
     switch (event->type) {
+        case TYPE_PLAYER:
+        {
+            int HP, maxHP;
+            event->data->Read(maxHP);
+            event->data->Read(HP);
+
+            auto hero = event->entity.assign<hero_t>(maxHP);
+            hero->HP = HP;
+        }break;
+
         case TYPE_BOMB:
         {
             float timeLeft, startTime;
@@ -243,7 +315,26 @@ void entity_update(callbacks::evt_t* evt)
 void entity_remove(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_remove_t*) evt;
-    librg::core::log("entity_remove called");
+    librg::core::log("entity_remove called, type: %d", event->type);
+
+    switch (event->type) {
+        case TYPE_BOMB:
+        {
+            librg::core::log("EXPLOSION!!!");
+            auto transform = event->entity.component<transform_t>();
+
+            bool needsNew = true;
+            explosion_t explosion = { transform->position, 150.f };
+
+            for (auto &exp : explosions) {
+                if (exp.impact < 0) {
+                    exp = explosion;
+                }
+            }
+
+            if (needsNew) explosions.push_back(explosion);
+        }break;
+    }
 }
 
 /**
@@ -274,6 +365,10 @@ void ontick(callbacks::evt_t* evt)
     librg::entities->each<bomb_t>([event](Entity entity, bomb_t& bomb) {
         bomb.timeLeft -= event->dt;
     });
+
+    for (auto &exp : explosions) {
+        exp.impact -= event->dt * 40;
+    }
 }
 
 
@@ -296,6 +391,37 @@ int main(int argc, char *args[])
     librg::callbacks::set(librg::callbacks::create, entity_create);
     librg::callbacks::set(librg::callbacks::update, entity_update);
     librg::callbacks::set(librg::callbacks::remove, entity_remove);
+
+    librg::network::add(GAME_NEW_LOCAL_PLAYER, [](network::bitstream_t *data, network::packet_t *packet) {
+        int maxHP;
+        data->Read(maxHP);
+
+        playerEntity = librg::entities->create();
+        playerEntity.assign<hero_t>(maxHP);
+    });
+
+    librg::network::add(GAME_HIT_LOCAL_PLAYER, [](network::bitstream_t *data, network::packet_t *packet) {
+        int HP;
+        data->Read(HP);
+
+        auto hero = playerEntity.component<hero_t>();
+        hero->HP = HP;
+
+        if (hero->HP < 0) {
+            core::log("Oh you're dead!");
+        }
+    });
+
+    librg::network::add(GAME_HIT_PLAYER, [](network::bitstream_t *data, network::packet_t *packet) {
+        network::guid_t guid;
+        int HP;
+
+        data->Read(guid);
+        data->Read(HP);
+
+        auto hero = streamer::client_cache[guid].component<hero_t>();
+        hero->HP = HP;
+    });
 
     if (!InitEverything()) {
         return -1;

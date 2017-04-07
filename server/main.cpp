@@ -1,17 +1,9 @@
-#include <librg/librg.h>
+﻿#include <librg/librg.h>
 
 #include <messages.h>
 #include <types.h>
 
 using namespace librg;
-
-struct hero_t {
-    hero_t() : attackSpeed(1.f), ammo(42) { }
-    hero_t(float attackSpeed, int ammo) : attackSpeed(attackSpeed), ammo(ammo) { }
-
-    float attackSpeed;
-    int ammo;
-};
 
 void* on_client_connected_proxy(const void* data, Sqrat::Array *array)
 {
@@ -22,7 +14,14 @@ void* on_client_connected_proxy(const void* data, Sqrat::Array *array)
 void on_client_connected_cb(const void* data, void* /* blob */)
 {
     auto entity = librg::entities->get((Entity::Id)*(uint64_t*)data);
-    entity.assign<hero_t>();
+    entity.assign<hero_t>(100);
+
+    auto client = entity.component<client_t>();
+    
+    network::msg(GAME_NEW_LOCAL_PLAYER, client->address, [](network::bitstream_t *data) {
+        data->Write(100);
+    });
+
     librg::core::log("New hero came!");
 }
 
@@ -42,6 +41,13 @@ void entity_create_forplayer(callbacks::evt_t* evt)
     librg::core::log("entity_create called with type: %d", event->type);
 
     switch (event->type) {
+        case TYPE_PLAYER:
+        {
+            auto hero = event->entity.component<hero_t>();
+            event->data->Write(hero->maxHP);
+            event->data->Write(hero->HP);
+        }break;
+
         case TYPE_BOMB:
         {
             auto bomb = event->entity.component<bomb_t>();
@@ -77,9 +83,42 @@ void ontick(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_tick_t*) evt;
 
-    librg::entities->each<bomb_t>([event](entity_t entity, bomb_t& bomb) {
+    librg::entities->each<bomb_t, transform_t>([event](entity_t bombEntity, bomb_t& bomb, transform_t& bombTransform) {
         if (bomb.timeLeft < 0) {
-            librg::streamer::remove(entity);
+
+            librg::entities->each<client_t, transform_t>([&](entity_t playerEntity, client_t& client, transform_t& transform) {
+                float blastRadius = 5;
+
+                auto v = (transform.position - bombTransform.position);
+                auto d = std::sqrtf(v.x()*v.x() + v.y()*v.y() + v.z()*v.z());
+                core::log("Player: %d distance: %f", playerEntity.id().id(), d);
+                if (d < 150) {
+                    core::log("We've hit hero: %d hard!", client.address.systemIndex);
+
+                    auto entities = librg::streamer::query(playerEntity);
+
+                    auto hero = playerEntity.component<hero_t>();
+                    hero->HP -= 10; // deal 10 HP damage!
+
+                    for (auto entity : entities) {
+                        auto otherClient = entity.component<client_t>();
+
+                        if (otherClient) {
+                            network::msg(GAME_HIT_PLAYER, otherClient->address, [hero, playerEntity](network::bitstream_t *data) {
+                                data->Write(playerEntity.id().id());
+                                data->Write(hero->HP);
+                            });
+                        }
+                    }
+
+                    network::msg(GAME_HIT_LOCAL_PLAYER, client.address, [hero](network::bitstream_t *data) {
+                        data->Write(hero->HP); 
+                    });
+
+                }
+            });
+
+            librg::streamer::remove(bombEntity);
         }
         else {
             bomb.timeLeft -= event->dt;
