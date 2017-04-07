@@ -95,21 +95,13 @@ void ontick(callbacks::evt_t* evt)
                 if (d < 150) {
                     core::log("We've hit hero: %d hard!", client.address.systemIndex);
 
-                    auto entities = librg::streamer::query(playerEntity);
-
                     auto hero = playerEntity.component<hero_t>();
                     hero->HP -= 10; // deal 10 HP damage!
 
-                    for (auto entity : entities) {
-                        auto otherClient = entity.component<client_t>();
-
-                        if (otherClient) {
-                            network::msg(GAME_HIT_PLAYER, otherClient->address, [hero, playerEntity](network::bitstream_t *data) {
-                                data->Write(playerEntity.id().id());
-                                data->Write(hero->HP);
-                            });
-                        }
-                    }
+                    network::msg(GAME_HIT_PLAYER, playerEntity, [hero, playerEntity](network::bitstream_t *data) {
+                        data->Write(playerEntity.id().id());
+                        data->Write(hero->HP);
+                    });
 
                     network::msg(GAME_HIT_LOCAL_PLAYER, client.address, [hero](network::bitstream_t *data) {
                         data->Write(hero->HP); 
