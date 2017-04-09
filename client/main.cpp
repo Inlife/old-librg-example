@@ -217,6 +217,7 @@ void SetupRenderer()
 }
 
 bool shooting = false;
+bool keysHeld[323] = { false };
 
 void RunGame()
 {
@@ -225,47 +226,42 @@ void RunGame()
     while ( loop )
     {
         SDL_Event event;
-        while ( SDL_PollEvent( &event ) )
+        while (SDL_PollEvent(&event))
         {
-            if ( event.type == SDL_QUIT )
+            if (event.type == SDL_QUIT)
                 loop = false;
 
+            if (event.type == SDL_KEYDOWN)
+            {
+                keysHeld[event.key.keysym.sym] = true;
 
-            if (playerEntity) {
-                auto hero = playerEntity.component<hero_t>();
+                switch (event.key.keysym.sym) {
+                case SDLK_SPACE:
+                    shooting = true;
+                    break;
+                }
+            }
+            else if (event.type == SDL_KEYUP)
+            {
+                keysHeld[event.key.keysym.sym] = false;
+            }
+        }
+         
+        if (playerEntity) {
+            auto hero = playerEntity.component<hero_t>();
 
-                if (hero->HP > 0) {
-                    if (event.type == SDL_KEYDOWN)
-                    {
-                        switch (event.key.keysym.sym)
-                        {
-                        case SDLK_RIGHT:
-                            //playerPos.x += 5;
-                            //hero->accel = vectorial::vec3f(hero->accel.x() + 5, hero->accel.y(), hero->accel.z());
-                            hero->accel.X = 5;
-                            break;
-                        case SDLK_LEFT:
-                            hero->accel.X = -5;
-                            break;
-                        }
-                        switch (event.key.keysym.sym)
-                        {
-                            // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
-                        case SDLK_DOWN:
-                            hero->accel.Y = 5;
-                            break;
-                        case SDLK_UP:
-                            hero->accel.Y = -5;
-                            break;
-                        }
-                        switch (event.key.keysym.sym)
-                        {
-                            // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
-                        case SDLK_SPACE:
-                            shooting = 1;
-                            break;
-                        }
-                    }
+            if (hero->HP > 0) {
+                if (keysHeld[SDLK_a]) {
+                    if (hero->accel.X > -5) hero->accel.X -= 0.5f;
+                }
+                if (keysHeld[SDLK_d]) {
+                    if (hero->accel.X <  5) hero->accel.X += 0.5f;
+                }
+                if (keysHeld[SDLK_w]) {
+                    if (hero->accel.Y > -5) hero->accel.Y -= 0.5f;
+                }
+                if (keysHeld[SDLK_s]) {
+                    if (hero->accel.Y <  5) hero->accel.Y += 0.5f;
                 }
             }
         }
