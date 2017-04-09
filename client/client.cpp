@@ -417,7 +417,7 @@ int main(int argc, char *args[])
         data->Read(guid);
         data->Read(HP);
 
-        auto hero = streamer::client_cache[guid].component<hero_t>();
+        auto hero = streamer::entity_pool[guid].component<hero_t>();
         hero->HP = HP;
     });
 
