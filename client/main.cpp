@@ -67,6 +67,7 @@ void Render()
         position.w = 20;
         position.h = 20;
 
+        SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
         SDL_RenderFillRect( renderer, &position );
 
         if (hero.HP > 0) {
