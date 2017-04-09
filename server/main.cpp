@@ -89,8 +89,8 @@ void ontick(callbacks::evt_t* evt)
             librg::entities->each<client_t, transform_t>([&](entity_t playerEntity, client_t& client, transform_t& transform) {
                 float blastRadius = 5;
 
-                auto v = (transform.position - bombTransform.position);
-                auto d = std::sqrtf(v.x()*v.x() + v.y()*v.y() + v.z()*v.z());
+                auto v = (HMM_SubtractVec3(transform.position, bombTransform.position));
+                auto d = std::sqrtf(v.X*v.X + v.Y*v.Y + v.Z*v.Z);
                 core::log("Player: %d distance: %f", playerEntity.id().id(), d);
                 if (d < 150) {
                     core::log("We've hit hero: %d hard!", client.address.systemIndex);
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 
         auto transform = network::clients[packet->guid].component<transform_t>();
 
-        transform->position = vectorial::vec3f(x, y, transform->position.z());
+        transform->position = hmm_vec3{ x, y, transform->position.Z };
     });
 
     librg::core::start("localhost", 7750);

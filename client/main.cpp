@@ -35,7 +35,7 @@ SDL_Rect playerRange;
 entity_t playerEntity = {};
 
 struct explosion_t {
-    vec3f position;
+    hmm_vec3 position;
     float impact;
 };
 
@@ -62,8 +62,8 @@ void Render()
     librg::entities->each<librg::transform_t, hero_t>([](Entity entity, librg::transform_t& transform, hero_t& hero) {
         SDL_Rect position;
 
-        position.x = (int)transform.position.x() - 10;
-        position.y = (int)transform.position.y() - 10;
+        position.x = (int)transform.position.X - 10;
+        position.y = (int)transform.position.Y - 10;
         position.w = 20;
         position.h = 20;
 
@@ -88,8 +88,8 @@ void Render()
     librg::entities->each<bomb_t, librg::transform_t>([](Entity entity, bomb_t& bomb, librg::transform_t& transform) {
         SDL_Rect position;
 
-        position.x = (int)transform.position.x() - 10;
-        position.y = (int)transform.position.y() - 10;
+        position.x = (int)transform.position.X - 10;
+        position.y = (int)transform.position.Y - 10;
         position.w = 20;
         position.h = 20;
 
@@ -131,12 +131,20 @@ void Render()
     for (auto &explosion : explosions) {
         if (explosion.impact < 0) continue;
 
-        position.x = explosion.position.x() - explosion.impact / 2.f;
-        position.y = explosion.position.y() - explosion.impact / 2.f;
+        position.x = explosion.position.X - explosion.impact / 2.f;
+        position.y = explosion.position.Y - explosion.impact / 2.f;
         position.w = explosion.impact;
         position.h = explosion.impact;
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 150);
+        SDL_RenderFillRect(renderer, &position);
+
+        position.x += explosion.impact / 4.f;
+        position.y += explosion.impact / 4.f;
+        position.w = explosion.impact  / 2.f;
+        position.h = explosion.impact  / 2.f;
+
+        SDL_SetRenderDrawColor(renderer, 255, 148, 0, 150);
         SDL_RenderFillRect(renderer, &position);
     }
 
@@ -232,20 +240,22 @@ void RunGame()
                         switch (event.key.keysym.sym)
                         {
                         case SDLK_RIGHT:
-                            playerPos.x += 5;
+                            //playerPos.x += 5;
+                            //hero->accel = vectorial::vec3f(hero->accel.x() + 5, hero->accel.y(), hero->accel.z());
+                            hero->accel.X = 5;
                             break;
                         case SDLK_LEFT:
-                            playerPos.x -= 5;
+                            hero->accel.X = -5;
                             break;
                         }
                         switch (event.key.keysym.sym)
                         {
                             // Remeber 0,0 in SDL is left-top. So when the user pressus down, the y need to increase
                         case SDLK_DOWN:
-                            playerPos.y += 5;
+                            hero->accel.Y = 5;
                             break;
                         case SDLK_UP:
-                            playerPos.y -= 5;
+                            hero->accel.Y = -5;
                             break;
                         }
                         switch (event.key.keysym.sym)
@@ -370,6 +380,16 @@ void ontick(callbacks::evt_t* evt)
 
     for (auto &exp : explosions) {
         exp.impact -= event->dt * 40;
+    }
+
+    if (playerEntity) {
+        auto hero = playerEntity.component<hero_t>();
+
+        if (hero->accel.X > 0.012f || hero->accel.X < -0.012f) playerPos.x += hero->accel.X;
+        if (hero->accel.Y > 0.012f || hero->accel.Y < -0.012f) playerPos.y += hero->accel.Y;
+
+        hero->accel.X = HMM_Lerp(hero->accel.X, 0.95 * event->dt, 0.f);
+        hero->accel.Y = HMM_Lerp(hero->accel.Y, 0.95 * event->dt, 0.f);
     }
 }
 

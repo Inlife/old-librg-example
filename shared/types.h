@@ -14,8 +14,9 @@ struct bomb_t {
 };
 
 struct hero_t {
-    hero_t()          : maxHP(100), HP(maxHP) {}
-    hero_t(int maxHP) : maxHP(maxHP), HP(maxHP) {}
+    hero_t()          : maxHP(100), HP(maxHP), accel() {}
+    hero_t(int maxHP) : maxHP(maxHP), HP(maxHP), accel() {}
     int maxHP;
     int HP;
+    hmm_vec3 accel;
 };
