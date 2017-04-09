@@ -73,19 +73,6 @@ void entity_remove_forplayers(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_remove_t*) evt;
     librg::core::log("entity_remove called");
-
-    switch (event->type) {
-        case TYPE_BOMB:
-        {
-            auto transform = event->entity.component<transform_t>();
-            auto position  = transform->position;
-            librg::entities->each<client_t>([event, position](entity_t entity, client_t& client){
-                network::msg(GAME_BOMB_EXPLODE, event->entity, [position](network::bitstream_t *data) {
-                    data->Write(position);
-                });
-            });
-        }break;
-    }
 }
 
 
@@ -123,6 +110,13 @@ void ontick(callbacks::evt_t* evt)
                 }
             });
 
+            auto transform = bombEntity.component<transform_t>();
+            auto position = transform->position;
+            librg::entities->each<client_t>([bombEntity, position](entity_t entity, client_t& client){
+                network::msg(GAME_BOMB_EXPLODE, bombEntity, [position](network::bitstream_t *data) {
+                    data->Write(position);
+                });
+            });
             librg::streamer::remove(bombEntity);
         }
         else {
