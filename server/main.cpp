@@ -125,7 +125,7 @@ void ontick(callbacks::evt_t* evt)
     });
 
     librg::entities->each<hero_t, client_t>([event](entity_t entity, hero_t& hero, client_t& client) {
-        if (hero.HP < 0) {
+        if (hero.HP <= 0) {
             if (hero.cooldown == 0) {
                 hero.cooldown = 1;
             }
@@ -144,7 +144,7 @@ void ontick(callbacks::evt_t* evt)
             }
             else
             {
-                hero.cooldown -= event->dt * 10;
+                hero.cooldown -= event->dt / 25.f;
             }
         }
     });
