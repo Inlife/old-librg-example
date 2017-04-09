@@ -322,27 +322,6 @@ void entity_remove(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_remove_t*) evt;
     librg::core::log("entity_remove called, type: %d", event->type);
-
-    switch (event->type) {
-        case TYPE_BOMB:
-        {
-            librg::core::log("EXPLOSION!!!");
-            auto transform = event->entity.component<transform_t>();
-
-            bool needsNew = true;
-            explosion_t explosion = { transform->position, 150.f };
-
-            for (auto &exp : explosions) {
-                if (exp.impact < 0) {
-                    exp = explosion;
-                    needsNew = false;
-                    break;
-                }
-            }
-
-            if (needsNew) explosions.push_back(explosion);
-        }break;
-    }
 }
 
 /**
@@ -439,6 +418,24 @@ int main(int argc, char *args[])
 
         auto hero = streamer::client_cache[guid].component<hero_t>();
         hero->HP = HP;
+    });
+
+    librg::network::add(GAME_BOMB_EXPLODE, [](network::bitstream_t *data, network::packet_t *packet) {
+        hmm_vec3 position;
+        data->Read(position);
+
+        bool needsNew = true;
+        explosion_t explosion = { position, 150.f };
+
+        for (auto &exp : explosions) {
+            if (exp.impact < 0) {
+                exp = explosion;
+                needsNew = false;
+                break;
+            }
+        }
+
+        if (needsNew) explosions.push_back(explosion);
     });
 
     if (!InitEverything()) {
