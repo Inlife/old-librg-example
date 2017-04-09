@@ -443,8 +443,12 @@ int main(int argc, char *args[])
         return -1;
     }
 
+    auto cfg = librg::core::config_t{ };
+    cfg.ip = "localhost";
+    cfg.port = 7750;
+
     // start the client (network connection)
-    librg::core::start("localhost", 7750);
+    librg::core::start(cfg);
 
     // Initlaize our player
     playerPos.x = 20;

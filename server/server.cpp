@@ -195,8 +195,13 @@ int main(int argc, char** argv)
 
         transform->position = hmm_vec3{ x, y, transform->position.Z };
     });
+    
+    auto cfg = librg::core::config_t{};
+    cfg.ip = "localhost";
+    cfg.port = 7750;
+    cfg.worldSize = HMM_Vec3(5000, 5000, 5000);
 
-    librg::core::start("localhost", 7750);
+    librg::core::start(cfg);
     librg::core_terminate();
 
     return 0;
