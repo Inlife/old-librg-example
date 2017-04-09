@@ -90,9 +90,9 @@ void ontick(callbacks::evt_t* evt)
                 float blastRadius = 5;
 
                 auto v = (HMM_SubtractVec3(transform.position, bombTransform.position));
-                auto d = sqrtf(v.X*v.X + v.Y*v.Y + v.Z*v.Z);
+                auto d = (v.X*v.X + v.Y*v.Y);
                 core::log("Player: %d distance: %f", playerEntity.id().id(), d);
-                if (d < 150) {
+                if (d <= 150*150) { // NOTE: optimization
                     core::log("We've hit hero: %d hard!", client.address.systemIndex);
 
                     auto hero = playerEntity.component<hero_t>();
