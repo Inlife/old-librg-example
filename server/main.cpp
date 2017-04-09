@@ -90,7 +90,7 @@ void ontick(callbacks::evt_t* evt)
                 float blastRadius = 5;
 
                 auto v = (HMM_SubtractVec3(transform.position, bombTransform.position));
-                auto d = std::sqrtf(v.X*v.X + v.Y*v.Y + v.Z*v.Z);
+                auto d = sqrtf(v.X*v.X + v.Y*v.Y + v.Z*v.Z);
                 core::log("Player: %d distance: %f", playerEntity.id().id(), d);
                 if (d < 150) {
                     core::log("We've hit hero: %d hard!", client.address.systemIndex);
@@ -98,12 +98,12 @@ void ontick(callbacks::evt_t* evt)
                     auto hero = playerEntity.component<hero_t>();
                     hero->HP -= 10; // deal 10 HP damage!
 
-                    network::msg(GAME_HIT_PLAYER, playerEntity, [hero, playerEntity](network::bitstream_t *data) {
+                    network::msg(GAME_PLAYER_SETHP, playerEntity, [hero, playerEntity](network::bitstream_t *data) {
                         data->Write(playerEntity.id().id());
                         data->Write(hero->HP);
                     });
 
-                    network::msg(GAME_HIT_LOCAL_PLAYER, client.address, [hero](network::bitstream_t *data) {
+                    network::msg(GAME_LOCAL_PLAYER_SETHP, client.address, [hero](network::bitstream_t *data) {
                         data->Write(hero->HP); 
                     });
 
@@ -114,6 +114,31 @@ void ontick(callbacks::evt_t* evt)
         }
         else {
             bomb.timeLeft -= event->dt;
+        }
+    });
+
+    librg::entities->each<hero_t, client_t>([event](entity_t entity, hero_t& hero, client_t& client) {
+        if (hero.HP < 0) {
+            if (hero.cooldown == 0) {
+                hero.cooldown = 1;
+            }
+            else if (hero.cooldown < 0) {
+                hero.HP = 100;
+                hero.cooldown = 0;
+
+                network::msg(GAME_PLAYER_SETHP, entity, [entity](network::bitstream_t *data) {
+                    data->Write(entity.id().id());
+                    data->Write(100);
+                });
+
+                network::msg(GAME_LOCAL_PLAYER_SETHP, client.address, [entity](network::bitstream_t *data) {
+                    data->Write(100);
+                });
+            }
+            else
+            {
+                hero.cooldown -= event->dt * 10;
+            }
         }
     });
 }

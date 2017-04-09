@@ -233,7 +233,7 @@ void RunGame()
 
             if (event.type == SDL_KEYDOWN)
             {
-                keysHeld[event.key.keysym.sym] = true;
+                if (event.key.keysym.sym < 323) keysHeld[event.key.keysym.sym] = true;
 
                 switch (event.key.keysym.sym) {
                 case SDLK_SPACE:
@@ -243,7 +243,7 @@ void RunGame()
             }
             else if (event.type == SDL_KEYUP)
             {
-                keysHeld[event.key.keysym.sym] = false;
+                if (event.key.keysym.sym < 323) keysHeld[event.key.keysym.sym] = false;
             }
         }
          
@@ -418,7 +418,7 @@ int main(int argc, char *args[])
         playerEntity.assign<hero_t>(maxHP);
     });
 
-    librg::network::add(GAME_HIT_LOCAL_PLAYER, [](network::bitstream_t *data, network::packet_t *packet) {
+    librg::network::add(GAME_LOCAL_PLAYER_SETHP, [](network::bitstream_t *data, network::packet_t *packet) {
         int HP;
         data->Read(HP);
 
@@ -430,7 +430,7 @@ int main(int argc, char *args[])
         }
     });
 
-    librg::network::add(GAME_HIT_PLAYER, [](network::bitstream_t *data, network::packet_t *packet) {
+    librg::network::add(GAME_PLAYER_SETHP, [](network::bitstream_t *data, network::packet_t *packet) {
         network::guid_t guid;
         int HP;
 

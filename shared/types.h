@@ -14,9 +14,10 @@ struct bomb_t {
 };
 
 struct hero_t {
-    hero_t()          : maxHP(100), HP(maxHP), accel() {}
-    hero_t(int maxHP) : maxHP(maxHP), HP(maxHP), accel() {}
+    hero_t()          : maxHP(100), HP(maxHP), cooldown(0), accel() {}
+    hero_t(int maxHP) : maxHP(maxHP), HP(maxHP), cooldown(0), accel() {}
     int maxHP;
     int HP;
+    float cooldown;
     hmm_vec3 accel;
 };
