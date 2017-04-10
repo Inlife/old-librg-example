@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <iostream>
 
@@ -269,8 +269,6 @@ void RunGame()
         }
 
         librg::core::tick();
-
-        //librg::network::interpolate(16/1000.0);
         Render();
 
         //SDL_Delay( 16 );
@@ -339,6 +337,7 @@ void entity_inter(callbacks::evt_t* evt)
 
     auto tran = event->entity.component<transform_t>();
 
+    // tran->position = event->data.position;
     *tran = event->data;
 }
 
@@ -393,7 +392,7 @@ int main(int argc, char *args[])
 
     // setup callbacks
     librg::callbacks::set(librg::callbacks::tick, ontick);
-    // librg::callbacks::set(librg::callbacks::inter, entity_inter);
+    librg::callbacks::set(librg::callbacks::inter, entity_inter);
     librg::callbacks::set(librg::callbacks::create, entity_create);
     librg::callbacks::set(librg::callbacks::update, entity_update);
     librg::callbacks::set(librg::callbacks::remove, entity_remove);
