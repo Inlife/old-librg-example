@@ -270,7 +270,7 @@ void RunGame()
 
         librg::core::tick();
 
-        librg::network::interpolate(16/1000.0);
+        //librg::network::interpolate(16/1000.0);
         Render();
 
         //SDL_Delay( 16 );
@@ -336,6 +336,10 @@ void entity_inter(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_inter_t*) evt;
     // librg::core::log("entity_interpolate called");
+
+    auto tran = event->entity.component<transform_t>();
+
+    *tran = event->data;
 }
 
 void ontick(callbacks::evt_t* evt)
