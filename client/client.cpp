@@ -6,6 +6,7 @@
 #include <SDL.h>
 #include <librg/librg.h>
 #include <librg/components/transform.h>
+#include <librg/components/interpolable.h>
 
 #include <messages.h>
 #include <types.h>
@@ -269,6 +270,7 @@ void RunGame()
 
         librg::core::tick();
 
+        librg::network::interpolate(16/1000.0);
         Render();
 
         //SDL_Delay( 16 );
@@ -290,7 +292,9 @@ void entity_create(callbacks::evt_t* evt)
             event->data->Read(maxHP);
             event->data->Read(HP);
 
-            auto hero = event->entity.assign<hero_t>(maxHP);
+            auto hero  = event->entity.assign<hero_t>(maxHP);
+            auto tran  = event->entity.component<transform_t>();
+            auto inter = event->entity.assign<interpolable_t>(*tran);
             hero->HP = HP;
         }break;
 
