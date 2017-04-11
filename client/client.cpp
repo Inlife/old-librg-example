@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <string.h>
 #include <iostream>
 
@@ -453,6 +453,10 @@ int main(int argc, char *args[])
     auto cfg = librg::core::config_t{ };
     cfg.ip = "localhost";
     cfg.port = 7750;
+
+    cfg.platformId = NETWORK_PLATFORM_ID;
+    cfg.protoVersion = NETWORK_PROTOCOL_VERSION;
+    cfg.buildVersion = NETWORK_BUILD_VERSION;
 
     // start the client (network connection)
     librg::core::start(cfg);

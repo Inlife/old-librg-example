@@ -201,6 +201,10 @@ int main(int argc, char** argv)
     cfg.port = 7750;
     cfg.worldSize = HMM_Vec3(5000, 5000, 5000);
 
+    cfg.platformId   = NETWORK_PLATFORM_ID;
+    cfg.protoVersion = NETWORK_PROTOCOL_VERSION;
+    cfg.buildVersion = NETWORK_BUILD_VERSION;
+
     librg::core::start(cfg);
     librg::core_terminate();
 
