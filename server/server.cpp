@@ -5,15 +5,11 @@
 
 using namespace librg;
 
-void* on_client_connected_proxy(const void* data, Sqrat::Array *array)
+void client_connect(callbacks::evt_t* evt)
 {
-    // NOTE(zaklaus): Expect only native calls!
-    return (void*)data;
-}
+    auto event = (callbacks::evt_connect_t*)evt;
 
-void on_client_connected_cb(const void* data, void* /* blob */)
-{
-    auto entity = librg::entities->get((Entity::Id)*(uint64_t*)data);
+    auto entity = event->entity;
     entity.assign<hero_t>(100);
 
     auto client = entity.component<client_t>();
@@ -24,13 +20,6 @@ void on_client_connected_cb(const void* data, void* /* blob */)
 
     librg::core::log("New hero came!");
 }
-
-
-
-
-
-
-
 
 /**
  * Entity add to streamer
@@ -168,8 +157,9 @@ int main(int argc, char** argv)
     librg::callbacks::set(librg::callbacks::create, entity_create_forplayer);
     librg::callbacks::set(librg::callbacks::update, entity_update_forplayers);
     librg::callbacks::set(librg::callbacks::remove, entity_remove_forplayers);
+    librg::callbacks::set(librg::callbacks::connect, client_connect);
 
-    librg::events::add("onClientConnect", on_client_connected_cb, on_client_connected_proxy);
+    //librg::events::add("onClientConnect", on_client_connected_cb, on_client_connected_proxy);
 
     librg::network::add(GAME_ON_SHOOT, [](network::bitstream_t *data, network::packet_t *packet) {
         librg::core::log("Player shoots! BANG BANG!");
