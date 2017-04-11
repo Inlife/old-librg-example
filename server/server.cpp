@@ -205,6 +205,11 @@ int main(int argc, char** argv)
     cfg.protoVersion = NETWORK_PROTOCOL_VERSION;
     cfg.buildVersion = NETWORK_BUILD_VERSION;
 
+    callbacks::set(callbacks::log, [](callbacks::evt_t* evt) {
+        auto event = (callbacks::evt_log_t*)evt;
+        std::cout << event->output;
+    });
+
     librg::core::start(cfg);
     librg::core_terminate();
 
