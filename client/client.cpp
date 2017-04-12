@@ -60,7 +60,7 @@ void Render()
     // Change color to blue
     SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
 
-    librg::entities->each<librg::transform_t, hero_t>([](Entity entity, librg::transform_t& transform, hero_t& hero) {
+    librg::entities->each<librg::transform_t, hero_t, librg::streamable_t>([](Entity entity, librg::transform_t& transform, hero_t& hero, librg::streamable_t& stream) {
         SDL_Rect position;
 
         position.x = (int)transform.position.X - 10;
@@ -68,7 +68,13 @@ void Render()
         position.w = 20;
         position.h = 20;
 
-        SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
+        if (stream.type == TYPE_ENEMY) {
+            SDL_SetRenderDrawColor(renderer, 25, 255, 34, 255);
+        }
+        else {
+            SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
+        }
+        
         SDL_RenderFillRect( renderer, &position );
 
         if (hero.HP > 0) {
@@ -100,7 +106,7 @@ void Render()
         SDL_RenderFillRect(renderer, &position);
     });
 
-    SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 150, 255, 255);
 
     SDL_Rect position;
 

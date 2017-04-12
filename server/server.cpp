@@ -142,7 +142,7 @@ void ontick(callbacks::evt_t* evt)
     });
 
     librg::entities->each<hero_t, transform_t, streamable_t>([event](entity_t npc, hero_t& hero, transform_t& tran, streamable_t& stream) {
-        if (stream.type == TYPE_ENEMY) {
+        if (stream.type == TYPE_ENEMY && hero.HP > 0) {
             auto curpos = tran.position;
             auto left = (rand() % 2) ? 5 : -5;
             auto up   = (rand() % 2) ? -5 : 5;
