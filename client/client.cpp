@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <iostream>
 
@@ -478,7 +478,7 @@ int main(int argc, char *args[])
     }
 
     auto cfg = librg::core::config_t{ };
-    cfg.ip = "inlife.no-ip.org";
+    cfg.ip = "localhost";
     cfg.port = 7750;
 
     cfg.platformId = NETWORK_PLATFORM_ID;
