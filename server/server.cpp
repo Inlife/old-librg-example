@@ -94,11 +94,17 @@ void ontick(callbacks::evt_t* evt)
                 auto transform = victim.component<transform_t>();
                 auto hero = victim.component<hero_t>();
 
+                hero->panicCooldown = 20;
+                hero->walkTime = 0;
+                hero->accel = HMM_NormalizeVec3(HMM_SubtractVec3(bombTransform.position, transform->position));
+                hero->accel.X *= -4;
+                hero->accel.Y *= -4;
+
                 auto v = (HMM_SubtractVec3(transform->position, bombTransform.position));
                 auto d = HMM_LengthSquaredVec3(v);
                 
                 if (d <= 150*150) { // NOTE: optimization
-                    hero->HP -= 10; // deal 10 HP damage!
+                    hero->HP -= d / 150*150 - 20; // deal 10 HP damage!
                     auto client = victim.component<client_t>();
 
                     if (client) {
@@ -125,11 +131,6 @@ void ontick(callbacks::evt_t* evt)
                 hero.HP = 100;
                 hero.cooldown = 0;
 
-                network::msg(GAME_PLAYER_SETHP, entity, [entity](network::bitstream_t *data) {
-                    data->Write(entity.id().id());
-                    data->Write(100);
-                });
-
                 network::msg(GAME_LOCAL_PLAYER_SETHP, client.address, [entity](network::bitstream_t *data) {
                     data->Write(100);
                 });
@@ -143,22 +144,47 @@ void ontick(callbacks::evt_t* evt)
 
     librg::entities->each<hero_t, transform_t, streamable_t>([event](entity_t npc, hero_t& hero, transform_t& tran, streamable_t& stream) {
         if (stream.type == TYPE_ENEMY && hero.HP > 0) {
-            auto curpos = tran.position;
-            auto left = (rand() % 2) ? 5 : -5;
-            auto up   = (rand() % 2) ? -5 : 5;
+            if (hero.walkTime == 0) {
 
-            curpos.X += left;
-            curpos.Y += up;
-
-            if (curpos.X < 0 || curpos.X >= 800) {
-                curpos.X += left * -2;
+                if (hero.panicCooldown > 0) {
+                    hero.walkTime = 0.33;
+                    hero.accel.X += (rand() % 5 - 10.0) / 10.0;
+                    hero.accel.Y += (rand() % 5 - 10.0) / 10.0;
+                    hero.panicCooldown -= event->dt;
+                }
+                else {
+                    hero.walkTime = 2;
+                    hero.accel.X += (rand() % 3 - 1.0) / 10.0;
+                    hero.accel.Y += (rand() % 3 - 1.0) / 10.0;
+                }
+                
+                hero.accel.X = (hero.accel.X > -1.0) ? ((hero.accel.X < 1.0) ? hero.accel.X : 1.0) : -1.0;
+                hero.accel.X = (hero.accel.Y > -1.0) ? ((hero.accel.Y < 1.0) ? hero.accel.Y : 1.0) : -1.0;
             }
+            else {
+                auto curpos = tran.position;
 
-            if (curpos.Y < 0 || curpos.Y >= 600) {
-                curpos.Y += left * -2;
+                curpos.X += hero.accel.X;
+                curpos.Y += hero.accel.Y;
+
+                if (curpos.X < 0 || curpos.X >= 800) {
+                    curpos.X += hero.accel.X * -2;
+                    hero.accel.X *= -1;
+                }
+
+                if (curpos.Y < 0 || curpos.Y >= 600) {
+                    curpos.Y += hero.accel.Y * -2;
+                    hero.accel.Y *= -1;
+                }
+
+                tran.position = curpos;
+
+                hero.walkTime -= event->dt;
+
+                if (hero.walkTime < 0) {
+                    hero.walkTime = 0;
+                }
             }
-
-            tran.position = curpos;
         }
     });
 }
@@ -195,7 +221,7 @@ int main(int argc, char** argv)
         entity.assign<transform_t>(*plTransform);
         entity.assign<bomb_t>(4);
 
-        auto streamable = entity.assign<streamable_t>(hmm_vec3{50, 50, 50});
+        auto streamable = entity.assign<streamable_t>(hmm_vec3{250, 250, 250});
         streamable->type = TYPE_BOMB;
     });
 
@@ -231,6 +257,9 @@ int main(int argc, char** argv)
             auto tran   = entity.assign<transform_t>();
             auto stream = entity.assign<streamable_t>();
             auto hero   = entity.assign<hero_t>(100);
+
+            hero->accel.X = (rand() % 3 - 1.0);
+            hero->accel.Y = (rand() % 3 - 1.0);
 
             stream->type = TYPE_ENEMY;
             srand(time(0) + i);

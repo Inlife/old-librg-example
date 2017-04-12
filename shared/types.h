@@ -44,4 +44,9 @@ struct hero_t {
     int HP;
     float cooldown;
     hmm_vec3 accel;
+
+    // enemy stuff
+    float panicCooldown = 0.0;
+    hmm_vec3 bombLocation = {};
+    float walkTime      = 0.0;
 };
