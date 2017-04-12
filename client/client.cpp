@@ -292,7 +292,7 @@ void entity_create(callbacks::evt_t* evt)
 
             auto hero  = event->entity.assign<hero_t>(maxHP);
             auto tran  = event->entity.component<transform_t>();
-            //auto inter = event->entity.assign<interpolable_t>(*tran);
+            auto inter = event->entity.assign<interpolable_t>(*tran);
             hero->HP = HP;
         }break;
 

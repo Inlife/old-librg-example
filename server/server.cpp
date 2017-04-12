@@ -226,7 +226,7 @@ int main(int argc, char** argv)
     });
 
     callbacks::set(callbacks::start, [](callbacks::evt_t* evt) {
-        for (int i = 0; i < 64; i++) {
+        for (int i = 0; i < 1000; i++) {
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
             auto stream = entity.assign<streamable_t>();
