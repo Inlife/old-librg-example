@@ -27,9 +27,9 @@ void client_connect(callbacks::evt_t* evt)
 void entity_create_forplayer(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_create_t*) evt;
-    librg::core::log("entity_create called with type: %d", event->type);
 
     switch (event->type) {
+        case TYPE_ENEMY:
         case TYPE_PLAYER:
         {
             auto hero = event->entity.component<hero_t>();
@@ -53,6 +53,21 @@ void entity_update_forplayers(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_update_t*) evt;
 
+    switch (event->type) {
+        case TYPE_ENEMY:
+        case TYPE_PLAYER:
+        {
+            auto hero = event->entity.component<hero_t>();
+            event->data->Write(hero->maxHP);
+            event->data->Write(hero->HP);
+        }break;
+
+        case TYPE_BOMB:
+        {
+            auto bomb = event->entity.component<bomb_t>();
+            event->data->Write(bomb->timeLeft);
+        }break;
+    }
 }
 
 /**
@@ -61,12 +76,7 @@ void entity_update_forplayers(callbacks::evt_t* evt)
 void entity_remove_forplayers(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_remove_t*) evt;
-    librg::core::log("entity_remove called");
 }
-
-
-
-
 
 void ontick(callbacks::evt_t* evt)
 {
@@ -75,37 +85,30 @@ void ontick(callbacks::evt_t* evt)
     librg::entities->each<bomb_t, transform_t>([event](entity_t bombEntity, bomb_t& bomb, transform_t& bombTransform) {
         if (bomb.timeLeft < 0) {
 
-            librg::entities->each<client_t, transform_t>([&](entity_t playerEntity, client_t& client, transform_t& transform) {
+            auto victims = streamer::query(bombEntity);
+
+            for (auto victim : victims) {
+                if (!victim.component<hero_t>()) continue;
+
                 float blastRadius = 5;
+                auto transform = victim.component<transform_t>();
+                auto hero = victim.component<hero_t>();
 
-                auto v = (HMM_SubtractVec3(transform.position, bombTransform.position));
+                auto v = (HMM_SubtractVec3(transform->position, bombTransform.position));
                 auto d = HMM_LengthSquaredVec3(v);
-                core::log("Player: %d distance: %f", playerEntity.id().id(), d);
+                
                 if (d <= 150*150) { // NOTE: optimization
-                    core::log("We've hit hero: %d hard!", client.address.systemIndex);
-
-                    auto hero = playerEntity.component<hero_t>();
                     hero->HP -= 10; // deal 10 HP damage!
+                    auto client = victim.component<client_t>();
 
-                    network::msg(GAME_PLAYER_SETHP, playerEntity, [hero, playerEntity](network::bitstream_t *data) {
-                        data->Write(playerEntity.id().id());
-                        data->Write(hero->HP);
-                    });
-
-                    network::msg(GAME_LOCAL_PLAYER_SETHP, client.address, [hero](network::bitstream_t *data) {
-                        data->Write(hero->HP); 
-                    });
-
+                    if (client) {
+                        network::msg(GAME_LOCAL_PLAYER_SETHP, client->address, [hero](network::bitstream_t *data) {
+                            data->Write(hero->HP);
+                        });
+                    }
                 }
-            });
+            }
 
-            auto transform = bombEntity.component<transform_t>();
-            auto position = transform->position;
-            librg::entities->each<client_t>([bombEntity, position](entity_t entity, client_t& client){
-                network::msg(GAME_BOMB_EXPLODE, bombEntity, [position](network::bitstream_t *data) {
-                    data->Write(position);
-                });
-            });
             librg::streamer::remove(bombEntity);
         }
         else {
@@ -135,6 +138,27 @@ void ontick(callbacks::evt_t* evt)
             {
                 hero.cooldown -= event->dt / 25.f;
             }
+        }
+    });
+
+    librg::entities->each<hero_t, transform_t, streamable_t>([event](entity_t npc, hero_t& hero, transform_t& tran, streamable_t& stream) {
+        if (stream.type == TYPE_ENEMY) {
+            auto curpos = tran.position;
+            auto left = (rand() % 2) ? 5 : -5;
+            auto up   = (rand() % 2) ? -5 : 5;
+
+            curpos.X += left;
+            curpos.Y += up;
+
+            if (curpos.X < 0 || curpos.X >= 800) {
+                curpos.X += left * -2;
+            }
+
+            if (curpos.Y < 0 || curpos.Y >= 600) {
+                curpos.Y += left * -2;
+            }
+
+            tran.position = curpos;
         }
     });
 }
@@ -171,7 +195,7 @@ int main(int argc, char** argv)
         entity.assign<transform_t>(*plTransform);
         entity.assign<bomb_t>(4);
 
-        auto streamable = entity.assign<streamable_t>();
+        auto streamable = entity.assign<streamable_t>(hmm_vec3{50, 50, 50});
         streamable->type = TYPE_BOMB;
     });
 
@@ -190,6 +214,7 @@ int main(int argc, char** argv)
     cfg.ip = "localhost";
     cfg.port = 7750;
     cfg.worldSize = HMM_Vec3(5000, 5000, 5000);
+    cfg.tickRate = 32;
 
     cfg.platformId   = NETWORK_PLATFORM_ID;
     cfg.protoVersion = NETWORK_PROTOCOL_VERSION;
@@ -198,6 +223,20 @@ int main(int argc, char** argv)
     callbacks::set(callbacks::log, [](callbacks::evt_t* evt) {
         auto event = (callbacks::evt_log_t*)evt;
         std::cout << event->output;
+    });
+
+    callbacks::set(callbacks::start, [](callbacks::evt_t* evt) {
+        for (int i = 0; i < 64; i++) {
+            auto entity = entities->create();
+            auto tran   = entity.assign<transform_t>();
+            auto stream = entity.assign<streamable_t>();
+            auto hero   = entity.assign<hero_t>(100);
+
+            stream->type = TYPE_ENEMY;
+            srand(time(0) + i);
+
+            tran->position = hmm_vec3{ (float)(rand() % 800), (float)(rand() % 600), 0.0f };
+        }
     });
 
     librg::core::start(cfg);

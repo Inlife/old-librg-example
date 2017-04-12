@@ -27,6 +27,7 @@
 enum {
     TYPE_PLAYER,
     TYPE_BOMB,
+    TYPE_ENEMY,
 };
 
 struct bomb_t {

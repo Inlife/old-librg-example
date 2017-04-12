@@ -281,9 +281,9 @@ void RunGame()
 void entity_create(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_create_t*) evt;
-    librg::core::log("entity_create called");
 
     switch (event->type) {
+        case TYPE_ENEMY:
         case TYPE_PLAYER:
         {
             int HP, maxHP;
@@ -292,7 +292,7 @@ void entity_create(callbacks::evt_t* evt)
 
             auto hero  = event->entity.assign<hero_t>(maxHP);
             auto tran  = event->entity.component<transform_t>();
-            auto inter = event->entity.assign<interpolable_t>(*tran);
+            //auto inter = event->entity.assign<interpolable_t>(*tran);
             hero->HP = HP;
         }break;
 
@@ -315,7 +315,28 @@ void entity_update(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_update_t*) evt;
 
-    // librg::core::log("entity_create update");
+    switch (event->type) {
+        case TYPE_ENEMY:
+        case TYPE_PLAYER:
+        {
+            int HP, maxHP;
+            event->data->Read(maxHP);
+            event->data->Read(HP);
+
+            auto hero = event->entity.component<hero_t>();
+            auto tran = event->entity.component<transform_t>();
+            hero->maxHP = maxHP;
+            hero->HP = HP;
+        }break;
+
+        case TYPE_BOMB:
+        {
+            float timeLeft;
+            event->data->Read(timeLeft);
+            auto bomb = event->entity.component<bomb_t>();
+            bomb->timeLeft = timeLeft;
+        }break;
+    }
 }
 
 /**
@@ -324,7 +345,29 @@ void entity_update(callbacks::evt_t* evt)
 void entity_remove(callbacks::evt_t* evt)
 {
     auto event = (callbacks::evt_remove_t*) evt;
-    librg::core::log("entity_remove called, type: %d", event->type);
+
+    switch (event->type) {
+        case TYPE_BOMB:
+        {
+            auto bomb = event->entity.component<bomb_t>();
+            if (bomb->timeLeft >= 0.2) break;
+            auto tran = event->entity.component<transform_t>();
+            hmm_vec3 position = tran->position;
+
+            bool needsNew = true;
+            explosion_t explosion = { position, 150.f };
+
+            for (auto &exp : explosions) {
+                if (exp.impact < 0) {
+                    exp = explosion;
+                    needsNew = false;
+                    break;
+                }
+            }
+
+            if (needsNew) explosions.push_back(explosion);
+        }break;
+    }
 }
 
 /**
@@ -356,10 +399,6 @@ void ontick(callbacks::evt_t* evt)
         });
         shooting = false;
     }
-
-    librg::entities->each<bomb_t>([event](Entity entity, bomb_t& bomb) {
-        bomb.timeLeft -= event->dt;
-    });
 
     for (auto &exp : explosions) {
         exp.impact -= event->dt * 40;
@@ -426,24 +465,6 @@ int main(int argc, char *args[])
 
         auto hero = streamer::entity_pool[guid].component<hero_t>();
         hero->HP = HP;
-    });
-
-    librg::network::add(GAME_BOMB_EXPLODE, [](network::bitstream_t *data, network::packet_t *packet) {
-        hmm_vec3 position;
-        data->Read(position);
-
-        bool needsNew = true;
-        explosion_t explosion = { position, 150.f };
-
-        for (auto &exp : explosions) {
-            if (exp.impact < 0) {
-                exp = explosion;
-                needsNew = false;
-                break;
-            }
-        }
-
-        if (needsNew) explosions.push_back(explosion);
     });
 
     if (!InitEverything()) {
