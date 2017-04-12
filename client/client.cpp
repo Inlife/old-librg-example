@@ -74,7 +74,7 @@ void Render()
         else {
             SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
         }
-        
+
         SDL_RenderFillRect( renderer, &position );
 
         if (hero.HP > 0) {
@@ -254,7 +254,7 @@ void RunGame()
                 if (event.key.keysym.sym < 323) keysHeld[event.key.keysym.sym] = false;
             }
         }
-         
+
         if (playerEntity) {
             auto hero = playerEntity.component<hero_t>();
 
@@ -478,7 +478,7 @@ int main(int argc, char *args[])
     }
 
     auto cfg = librg::core::config_t{ };
-    cfg.ip = "localhost";
+    cfg.ip = "inlife.no-ip.org";
     cfg.port = 7750;
 
     cfg.platformId = NETWORK_PLATFORM_ID;

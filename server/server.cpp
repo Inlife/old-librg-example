@@ -1,4 +1,4 @@
-﻿#include <librg/librg.h>
+#include <librg/librg.h>
 
 #include <messages.h>
 #include <types.h>
@@ -102,7 +102,7 @@ void ontick(callbacks::evt_t* evt)
 
                 auto v = (HMM_SubtractVec3(transform->position, bombTransform.position));
                 auto d = HMM_LengthSquaredVec3(v);
-                
+
                 if (d <= 150*150) { // NOTE: optimization
                     hero->HP -= d / 150*150 - 20; // deal 10 HP damage!
                     auto client = victim.component<client_t>();
@@ -157,7 +157,7 @@ void ontick(callbacks::evt_t* evt)
                     hero.accel.X += (rand() % 3 - 1.0) / 10.0;
                     hero.accel.Y += (rand() % 3 - 1.0) / 10.0;
                 }
-                
+
                 hero.accel.X = (hero.accel.X > -1.0) ? ((hero.accel.X < 1.0) ? hero.accel.X : 1.0) : -1.0;
                 hero.accel.X = (hero.accel.Y > -1.0) ? ((hero.accel.Y < 1.0) ? hero.accel.Y : 1.0) : -1.0;
             }
@@ -235,12 +235,12 @@ int main(int argc, char** argv)
 
         transform->position = hmm_vec3{ x, y, transform->position.Z };
     });
-    
+
     auto cfg = librg::core::config_t{};
     cfg.ip = "localhost";
     cfg.port = 7750;
     cfg.worldSize = HMM_Vec3(5000, 5000, 5000);
-    cfg.tickRate = 32;
+    cfg.tickRate = 256;
 
     cfg.platformId   = NETWORK_PLATFORM_ID;
     cfg.protoVersion = NETWORK_PROTOCOL_VERSION;
@@ -252,7 +252,7 @@ int main(int argc, char** argv)
     });
 
     callbacks::set(callbacks::start, [](callbacks::evt_t* evt) {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 50; i++) {
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
             auto stream = entity.assign<streamable_t>();
