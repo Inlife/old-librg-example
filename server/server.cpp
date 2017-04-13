@@ -1,4 +1,4 @@
-#include <librg/librg.h>
+﻿#include <librg/librg.h>
 
 #include <messages.h>
 #include <types.h>
@@ -164,8 +164,8 @@ void ontick(callbacks::evt_t* evt)
             else {
                 auto curpos = tran.position;
 
-                curpos.X += hero.accel.X;
-                curpos.Y += hero.accel.Y;
+                curpos.X += hero.accel.X * event->dt * 100;
+                curpos.Y += hero.accel.Y * event->dt * 100;
 
                 if (curpos.X < 0 || curpos.X >= 800) {
                     curpos.X += hero.accel.X * -2;
@@ -240,7 +240,7 @@ int main(int argc, char** argv)
     cfg.ip = "localhost";
     cfg.port = 7750;
     cfg.worldSize = HMM_Vec3(5000, 5000, 5000);
-    cfg.tickRate = 256;
+    cfg.tickRate = 32;
 
     cfg.platformId   = NETWORK_PLATFORM_ID;
     cfg.protoVersion = NETWORK_PROTOCOL_VERSION;
@@ -252,7 +252,7 @@ int main(int argc, char** argv)
     });
 
     callbacks::set(callbacks::start, [](callbacks::evt_t* evt) {
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 1; i++) {
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
             auto stream = entity.assign<streamable_t>();
