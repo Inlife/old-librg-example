@@ -19,6 +19,8 @@ int posY = 200;
 int sizeX = 800;
 int sizeY = 600;
 
+bool isAccelerated = true;
+
 SDL_Window* window;
 SDL_Renderer* renderer;
 
@@ -204,7 +206,7 @@ bool mehCreateWindow()
 
 bool CreateRenderer()
 {
-    renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_PRESENTVSYNC );
+    renderer = SDL_CreateRenderer( window, -1, isAccelerated ? SDL_RENDERER_PRESENTVSYNC : SDL_RENDERER_SOFTWARE);
 
     if ( renderer == nullptr )
     {
@@ -431,6 +433,10 @@ int main(int argc, char *args[])
     test.append("==                                              ==\n");
     test.append("==================================================\n");
     printf("%s\n\n", test.c_str());
+
+    if (argc > 1 ) {//&& !strcpy(args[1], "sw")) {
+        isAccelerated = false;
+    }
 
     // setup manual client mode
     librg::core_initialize(librg::mode_client_manual);
