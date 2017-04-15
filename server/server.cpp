@@ -60,6 +60,7 @@ void entity_update_forplayers(callbacks::evt_t* evt)
             auto hero = event->entity.component<hero_t>();
             event->data->Write(hero->maxHP);
             event->data->Write(hero->HP);
+            event->data->Write(hero->decayLevel);
         }break;
 
         case TYPE_BOMB:
@@ -122,7 +123,7 @@ void ontick(callbacks::evt_t* evt)
         }
     });
 
-    librg::entities->each<hero_t, client_t>([event](entity_t entity, hero_t& hero, client_t& client) {
+    librg::entities->each<hero_t>([event](entity_t entity, hero_t& hero) {
         if (hero.HP <= 0) {
             if (hero.cooldown == 0) {
                 hero.cooldown = 1;
@@ -130,14 +131,22 @@ void ontick(callbacks::evt_t* evt)
             else if (hero.cooldown < 0) {
                 hero.HP = 100;
                 hero.cooldown = 0;
+                
+                auto client = entity.component<client_t>();
 
-                network::msg(GAME_LOCAL_PLAYER_SETHP, client.address, [entity](network::bitstream_t *data) {
-                    data->Write(100);
-                });
+                if (client) {
+                    network::msg(GAME_LOCAL_PLAYER_SETHP, client->address, [entity](network::bitstream_t *data) {
+                        data->Write(100);
+                    });                    
+                }
+                else {
+                    streamer::remove(entity);
+                }
             }
             else
             {
                 hero.cooldown -= event->dt / 25.f;
+                hero.decayLevel = 1 - HMM_Lerp(0.f, max(hero.cooldown, 0.0f), 1.0f);
             }
         }
     });

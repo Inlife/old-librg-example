@@ -59,7 +59,7 @@ void Render()
     // Render our "player"
     SDL_RenderFillRect( renderer, &playerRange );
 
-    // Change color to blue
+    // Change color to gray
     SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
 
     librg::entities->each<librg::transform_t, hero_t, librg::streamable_t>([](Entity entity, librg::transform_t& transform, hero_t& hero, librg::streamable_t& stream) {
@@ -90,7 +90,7 @@ void Render()
             SDL_RenderFillRect(renderer, &position);
         }
         else {
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150);
+            SDL_SetRenderDrawColor(renderer, HMM_Lerp(255, hero.decayLevel, 150.f), HMM_Lerp(0.0f, hero.decayLevel, 150.f), HMM_Lerp(0.0f, hero.decayLevel, 150.f), 255);
             SDL_RenderFillRect(renderer, &position);
         }
     });
@@ -133,7 +133,7 @@ void Render()
             SDL_RenderFillRect(renderer, &position);
         }
         else {
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150);
+            SDL_SetRenderDrawColor(renderer, 255, 255, 0, 150.f);
             SDL_RenderFillRect(renderer, &position);
         }
     }
@@ -328,13 +328,16 @@ void entity_update(callbacks::evt_t* evt)
         case TYPE_PLAYER:
         {
             int HP, maxHP;
+            float decayLevel;
             event->data->Read(maxHP);
             event->data->Read(HP);
+            event->data->Read(decayLevel);
 
             auto hero = event->entity.component<hero_t>();
             auto tran = event->entity.component<transform_t>();
             hero->maxHP = maxHP;
             hero->HP = HP;
+            hero->decayLevel = decayLevel;
         }break;
 
         case TYPE_BOMB:

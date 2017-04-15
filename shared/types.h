@@ -46,7 +46,8 @@ struct hero_t {
     hmm_vec3 accel;
 
     // enemy stuff
-    float panicCooldown = 0.0;
+    float panicCooldown   = 0.0;
     hmm_vec3 bombLocation = {};
-    float walkTime      = 0.0;
+    float walkTime        = 0.0;
+    float decayLevel      = 1.0;
 };
