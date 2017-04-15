@@ -328,10 +328,11 @@ void entity_update(callbacks::evt_t* evt)
         case TYPE_PLAYER:
         {
             int HP, maxHP;
-            float decayLevel;
+            float decayLevel = 1.f;
             event->data->Read(maxHP);
             event->data->Read(HP);
-            event->data->Read(decayLevel);
+            
+            if (HP <= 0) event->data->Read(decayLevel);
 
             auto hero = event->entity.component<hero_t>();
             auto tran = event->entity.component<transform_t>();

@@ -59,8 +59,9 @@ void entity_update_forplayers(callbacks::evt_t* evt)
         {
             auto hero = event->entity.component<hero_t>();
             event->data->Write(hero->maxHP);
-            event->data->Write(hero->HP);
-            event->data->Write(hero->decayLevel);
+            event->data->Write(hero->HP);          
+            
+            if (hero->HP <= 0) event->data->Write(hero->decayLevel);
         }break;
 
         case TYPE_BOMB:
