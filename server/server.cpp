@@ -91,7 +91,9 @@ void ontick(callbacks::evt_t* evt)
             for (auto victim : victims) {
                 if (!victim.component<hero_t>()) continue;
 
-                float blastRadius = 5;
+#define pp(x) x*x
+                constexpr float blastRadius = pp(250);
+#undef pp                
                 auto transform = victim.component<transform_t>();
                 auto hero = victim.component<hero_t>();
 
@@ -104,8 +106,11 @@ void ontick(callbacks::evt_t* evt)
                 auto v = (HMM_SubtractVec3(transform->position, bombTransform.position));
                 auto d = HMM_LengthSquaredVec3(v);
 
-                if (d <= 150*150) { // NOTE: optimization
-                    hero->HP -= d / 150*150 - 20; // deal 10 HP damage!
+                if (d <= blastRadius) { // NOTE: optimization
+                    hero->HP -= (blastRadius - d) / blastRadius * 250;
+                    
+                    if (hero->HP < 0) hero->HP = 0;
+                    
                     auto client = victim.component<client_t>();
 
                     if (client) {
