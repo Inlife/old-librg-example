@@ -156,10 +156,10 @@ void ontick(callbacks::evt_t* evt)
                     hero.walkTime = 2;
                     hero.accel.X += (rand() % 3 - 1.0) / 10.0;
                     hero.accel.Y += (rand() % 3 - 1.0) / 10.0;
-                }
 
-                hero.accel.X = (hero.accel.X > -1.0) ? ((hero.accel.X < 1.0) ? hero.accel.X : 1.0) : -1.0;
-                hero.accel.X = (hero.accel.Y > -1.0) ? ((hero.accel.Y < 1.0) ? hero.accel.Y : 1.0) : -1.0;
+                    hero.accel.X = (hero.accel.X > -1.0) ? ((hero.accel.X < 1.0) ? hero.accel.X : 1.0) : -1.0;
+                    hero.accel.X = (hero.accel.Y > -1.0) ? ((hero.accel.Y < 1.0) ? hero.accel.Y : 1.0) : -1.0;
+                }
             }
             else {
                 auto curpos = tran.position;
@@ -252,7 +252,7 @@ int main(int argc, char** argv)
     });
 
     callbacks::set(callbacks::start, [](callbacks::evt_t* evt) {
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 250; i++) {
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
             auto stream = entity.assign<streamable_t>();
