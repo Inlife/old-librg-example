@@ -1,4 +1,4 @@
-﻿#include <librg/librg.h>
+#include <librg/librg.h>
 
 #include <messages.h>
 #include <types.h>
@@ -154,7 +154,11 @@ void ontick(callbacks::evt_t* evt)
             else
             {
                 hero.cooldown -= event->dt / 25.f;
+                
+                // TODO: Define these in linmath.h
+#define max(a,b) (a > b) ? a : b
                 hero.decayLevel = 1 - HMM_Lerp(0.f, max(hero.cooldown, 0.0f), 1.0f);
+#undef max                
             }
         }
     });
