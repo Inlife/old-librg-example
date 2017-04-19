@@ -3,6 +3,8 @@
 #include <messages.h>
 #include <types.h>
 
+#include <librg/utils/fs.h>
+
 using namespace librg;
 
 void client_connect(callbacks::evt_t* evt)
@@ -250,6 +252,7 @@ int main(int argc, char** argv)
 
         transform->position = hmm_vec3{ x, y, transform->position.Z };
     });
+    
 
     auto cfg = librg::core::config_t{};
     cfg.ip = "localhost";
@@ -282,7 +285,7 @@ int main(int argc, char** argv)
             tran->position = hmm_vec3{ (float)(rand() % 800), (float)(rand() % 600), 0.0f };
         }
     });
-
+      
     librg::core::start(cfg);
     librg::core_terminate();
 
