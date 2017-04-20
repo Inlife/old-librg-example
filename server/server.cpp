@@ -109,7 +109,7 @@ void ontick(callbacks::evt_t* evt)
                 auto v = (HMM_SubtractVec3(transform->position, bombTransform.position));
                 auto d = HMM_LengthSquaredVec3(v);
 
-                if (d <= blastRadius) { // NOTE: optimization
+                if (d <= blastRadius) {
                     hero->HP -= (blastRadius - d) / blastRadius * 250;
                     
                     if (hero->HP < 0) hero->HP = 0;
@@ -188,12 +188,12 @@ void ontick(callbacks::evt_t* evt)
                 curpos.X += hero.accel.X * event->dt * 100;
                 curpos.Y += hero.accel.Y * event->dt * 100;
 
-                if (curpos.X < 0 || curpos.X >= 800) {
+                if (curpos.X < 0 || curpos.X >= 5000) {
                     curpos.X += hero.accel.X * -2;
                     hero.accel.X *= -1;
                 }
 
-                if (curpos.Y < 0 || curpos.Y >= 600) {
+                if (curpos.Y < 0 || curpos.Y >= 5000) {
                     curpos.Y += hero.accel.Y * -2;
                     hero.accel.Y *= -1;
                 }
@@ -210,8 +210,9 @@ void ontick(callbacks::evt_t* evt)
     });
 }
 
-void generate_world() {
-    
+void generate_world() 
+{
+    // TODO: Add some world variety...
 }
 
 
@@ -276,7 +277,7 @@ int main(int argc, char** argv)
     });
 
     callbacks::set(callbacks::start, [](callbacks::evt_t* evt) {
-        for (int i = 0; i < 250; i++) {
+        for (int i = 0; i < 2500; i++) {
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
             auto stream = entity.assign<streamable_t>();
@@ -288,7 +289,7 @@ int main(int argc, char** argv)
             stream->type = TYPE_ENEMY;
             srand(time(0) + i);
 
-            tran->position = hmm_vec3{ (float)(rand() % 800), (float)(rand() % 600), 0.0f };
+            tran->position = hmm_vec3{ (float)(rand() % 5000), (float)(rand() % 5000), 0.0f };
         }
     });
       
