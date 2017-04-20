@@ -1,4 +1,4 @@
-﻿#include <librg/network.h>
+#include <librg/network.h>
 
 enum {
     GAME_ON_SHOOT,

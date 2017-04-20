@@ -1,4 +1,3 @@
-﻿
 #pragma once
 
 /**
@@ -44,10 +43,16 @@ struct hero_t {
     int HP;
     float cooldown;
     hmm_vec3 accel;
-
+    
     // enemy stuff
     float panicCooldown   = 0.0;
     hmm_vec3 bombLocation = {};
     float walkTime        = 0.0;
     float decayLevel      = 1.0;
+};
+
+struct building_t {
+    building_t() {}
+    
+    // TODO: what should the buildings have?
 };

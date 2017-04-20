@@ -210,7 +210,9 @@ void ontick(callbacks::evt_t* evt)
     });
 }
 
-
+void generate_world() {
+    
+}
 
 
 int main(int argc, char** argv)
