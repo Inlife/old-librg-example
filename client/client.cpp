@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <iostream>
 
@@ -279,24 +279,24 @@ void RunGame()
         librg::core::tick();
         Render();
 
-        //SDL_Delay( 16 );
+        SDL_Delay( 16 );
     }
 }
 
 /**
  * Entity add to streamer
  */
-void entity_create(callbacks::evt_t* evt)
+void entity_create(events::event_t* evt)
 {
-    auto event = (callbacks::evt_create_t*) evt;
+    auto event = (events::event_create_t*) evt;
 
     switch (event->type) {
         case TYPE_ENEMY:
         case TYPE_PLAYER:
         {
             int HP, maxHP;
-            event->data->Read(maxHP);
-            event->data->Read(HP);
+            event->data->read(maxHP);
+            event->data->read(HP);
 
             auto hero  = event->entity.assign<hero_t>(maxHP);
             auto tran  = event->entity.component<transform_t>();
@@ -307,8 +307,8 @@ void entity_create(callbacks::evt_t* evt)
         case TYPE_BOMB:
         {
             float timeLeft, startTime;
-            event->data->Read(startTime);
-            event->data->Read(timeLeft);
+            event->data->read(startTime);
+            event->data->read(timeLeft);
 
             auto bomb = event->entity.assign<bomb_t>(timeLeft);
             bomb->startTime = startTime;
@@ -319,17 +319,17 @@ void entity_create(callbacks::evt_t* evt)
 /**
  * Entity update in streamer
  */
-void entity_update(callbacks::evt_t* evt)
+void entity_update(events::event_t* evt)
 {
-    auto event = (callbacks::evt_update_t*) evt;
+    auto event = (events::event_update_t*) evt;
 
     switch (event->type) {
         case TYPE_ENEMY:
         case TYPE_PLAYER:
         {
             int HP, maxHP;
-            event->data->Read(maxHP);
-            event->data->Read(HP);
+            event->data->read(maxHP);
+            event->data->read(HP);
 
             auto hero = event->entity.component<hero_t>();
             auto tran = event->entity.component<transform_t>();
@@ -340,7 +340,7 @@ void entity_update(callbacks::evt_t* evt)
         case TYPE_BOMB:
         {
             float timeLeft;
-            event->data->Read(timeLeft);
+            event->data->read(timeLeft);
             auto bomb = event->entity.component<bomb_t>();
             bomb->timeLeft = timeLeft;
         }break;
@@ -350,9 +350,9 @@ void entity_update(callbacks::evt_t* evt)
 /**
  * Entity remove from streamer
  */
-void entity_remove(callbacks::evt_t* evt)
+void entity_remove(events::event_t* evt)
 {
-    auto event = (callbacks::evt_remove_t*) evt;
+    auto event = (events::event_remove_t*) evt;
 
     switch (event->type) {
         case TYPE_BOMB:
@@ -381,9 +381,9 @@ void entity_remove(callbacks::evt_t* evt)
 /**
  * Entity interpolate callback
  */
-void entity_inter(callbacks::evt_t* evt)
+void entity_inter(events::event_t* evt)
 {
-    auto event = (callbacks::evt_inter_t*) evt;
+    auto event = (events::event_inter_t*) evt;
     // librg::core::log("entity_interpolate called");
 
     auto tran = event->entity.component<transform_t>();
@@ -392,19 +392,18 @@ void entity_inter(callbacks::evt_t* evt)
     *tran = event->data;
 }
 
-void ontick(callbacks::evt_t* evt)
+void ontick(events::event_t* evt)
 {
-    auto event = (callbacks::evt_tick_t*) evt;
+    auto event = (events::event_tick_t*) evt;
 
     network::msg(GAME_SYNC_PACKET, [](network::bitstream_t* data) {
-        data->Write((float) playerPos.x);
-        data->Write((float) playerPos.y);
+        // core::log("sending packet with id: %d", GAME_SYNC_PACKET);
+        data->write((float) playerPos.x);
+        data->write((float) playerPos.y);
     });
 
     if (shooting) {
-        network::msg(GAME_ON_SHOOT, [](network::bitstream_t* data) {
-            // No stuff here yet. welp...
-        });
+        network::msg(GAME_ON_SHOOT, nullptr);
         shooting = false;
     }
 
@@ -434,31 +433,32 @@ int main(int argc, char *args[])
     test.append("==================================================\n");
     printf("%s\n\n", test.c_str());
 
-    if (argc > 1 ) {//&& !strcpy(args[1], "sw")) {
-        isAccelerated = false;
-    }
+    // if (argc > 1 ) {//&& !strcpy(args[1], "sw")) {
+    //     isAccelerated = false;
+    // }
 
     // setup manual client mode
     librg::core_initialize(librg::mode_client_manual);
+    // librg::core_initialize(librg::mode_client);
 
     // setup callbacks
-    librg::callbacks::set(librg::callbacks::tick, ontick);
-    librg::callbacks::set(librg::callbacks::inter, entity_inter);
-    librg::callbacks::set(librg::callbacks::create, entity_create);
-    librg::callbacks::set(librg::callbacks::update, entity_update);
-    librg::callbacks::set(librg::callbacks::remove, entity_remove);
+    librg::events::add(librg::events::on_tick, ontick);
+    librg::events::add(librg::events::on_inter, entity_inter);
+    librg::events::add(librg::events::on_create, entity_create);
+    librg::events::add(librg::events::on_update, entity_update);
+    librg::events::add(librg::events::on_remove, entity_remove);
 
-    librg::network::add(GAME_NEW_LOCAL_PLAYER, [](network::bitstream_t *data, network::packet_t *packet) {
+    librg::network::set(GAME_NEW_LOCAL_PLAYER, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
         int maxHP;
-        data->Read(maxHP);
+        data->read(maxHP);
 
         playerEntity = librg::entities->create();
         playerEntity.assign<hero_t>(maxHP);
     });
 
-    librg::network::add(GAME_LOCAL_PLAYER_SETHP, [](network::bitstream_t *data, network::packet_t *packet) {
+    librg::network::set(GAME_LOCAL_PLAYER_SETHP, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
         int HP;
-        data->Read(HP);
+        data->read(HP);
 
         auto hero = playerEntity.component<hero_t>();
         hero->HP = HP;
@@ -468,12 +468,12 @@ int main(int argc, char *args[])
         }
     });
 
-    librg::network::add(GAME_PLAYER_SETHP, [](network::bitstream_t *data, network::packet_t *packet) {
-        network::guid_t guid;
+    librg::network::set(GAME_PLAYER_SETHP, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
+        uint64_t guid;
         int HP;
 
-        data->Read(guid);
-        data->Read(HP);
+        data->read(guid);
+        data->read(HP);
 
         auto hero = streamer::entity_pool[guid].component<hero_t>();
         hero->HP = HP;
@@ -483,21 +483,28 @@ int main(int argc, char *args[])
         return -1;
     }
 
-    auto cfg = librg::core::config_t{ };
+    auto cfg = librg::config_t{};
     cfg.ip = "localhost";
     cfg.port = 7750;
+    cfg.world_size = HMM_Vec3(5000, 5000, 5000);
+    cfg.tick_delay = 32;
+    cfg.max_connections = 8;
+    cfg.platform_id = NETWORK_PLATFORM_ID;
+    cfg.proto_version = NETWORK_PROTOCOL_VERSION;
+    cfg.build_version = NETWORK_BUILD_VERSION;
 
-    cfg.platformId = NETWORK_PLATFORM_ID;
-    cfg.protoVersion = NETWORK_PROTOCOL_VERSION;
-    cfg.buildVersion = NETWORK_BUILD_VERSION;
-
-    callbacks::set(callbacks::log, [](callbacks::evt_t* evt) {
-        auto event = (callbacks::evt_log_t*)evt;
+    events::add(events::on_log, [](events::event_t* evt) {
+        auto event = (events::event_log_t*) evt;
         std::cout << event->output;
+    });
+
+    events::add(events::on_start, [](events::event_t* evt) {
+        core::log("me started !");
     });
 
     // start the client (network connection)
     librg::core::start(cfg);
+    librg::network::start(cfg);
 
     // Initlaize our player
     playerPos.x = 20;

@@ -1,21 +1,24 @@
-﻿#include <librg/librg.h>
+#include <librg/librg.h>
+#include <librg/components/transform.h>
+#include <librg/components/interpolable.h>
+#include <librg/components/client.h>
 
 #include <messages.h>
 #include <types.h>
 
 using namespace librg;
 
-void client_connect(callbacks::evt_t* evt)
+void client_connect(events::event_t* evt)
 {
-    auto event = (callbacks::evt_connect_t*)evt;
+    auto event = (events::event_connect_t*)evt;
 
     auto entity = event->entity;
     entity.assign<hero_t>(100);
 
     auto client = entity.component<client_t>();
-    
-    network::msg(GAME_NEW_LOCAL_PLAYER, client->address, [](network::bitstream_t *data) {
-        data->Write(100);
+
+    network::msg(GAME_NEW_LOCAL_PLAYER, client->peer, [](network::bitstream_t *data) {
+        data->write(100);
     });
 
     librg::core::log("New hero came!");
@@ -24,24 +27,24 @@ void client_connect(callbacks::evt_t* evt)
 /**
  * Entity add to streamer
  */
-void entity_create_forplayer(callbacks::evt_t* evt)
+void entity_create_forplayer(events::event_t* evt)
 {
-    auto event = (callbacks::evt_create_t*) evt;
+    auto event = (events::event_create_t*) evt;
 
     switch (event->type) {
         case TYPE_ENEMY:
         case TYPE_PLAYER:
         {
             auto hero = event->entity.component<hero_t>();
-            event->data->Write(hero->maxHP);
-            event->data->Write(hero->HP);
+            event->data->write(hero->maxHP);
+            event->data->write(hero->HP);
         }break;
 
         case TYPE_BOMB:
         {
             auto bomb = event->entity.component<bomb_t>();
-            event->data->Write(bomb->startTime);
-            event->data->Write(bomb->timeLeft);
+            event->data->write(bomb->startTime);
+            event->data->write(bomb->timeLeft);
         }break;
     }
 }
@@ -49,23 +52,23 @@ void entity_create_forplayer(callbacks::evt_t* evt)
 /**
  * Entity update in streamer
  */
-void entity_update_forplayers(callbacks::evt_t* evt)
+void entity_update_forplayers(events::event_t* evt)
 {
-    auto event = (callbacks::evt_update_t*) evt;
+    auto event = (events::event_update_t*) evt;
 
     switch (event->type) {
         case TYPE_ENEMY:
         case TYPE_PLAYER:
         {
             auto hero = event->entity.component<hero_t>();
-            event->data->Write(hero->maxHP);
-            event->data->Write(hero->HP);
+            event->data->write(hero->maxHP);
+            event->data->write(hero->HP);
         }break;
 
         case TYPE_BOMB:
         {
             auto bomb = event->entity.component<bomb_t>();
-            event->data->Write(bomb->timeLeft);
+            event->data->write(bomb->timeLeft);
         }break;
     }
 }
@@ -73,14 +76,14 @@ void entity_update_forplayers(callbacks::evt_t* evt)
 /**
  * Entity remove from streamer
  */
-void entity_remove_forplayers(callbacks::evt_t* evt)
+void entity_remove_forplayers(events::event_t* evt)
 {
-    auto event = (callbacks::evt_remove_t*) evt;
+    auto event = (events::event_remove_t*) evt;
 }
 
-void ontick(callbacks::evt_t* evt)
+void ontick(events::event_t* evt)
 {
-    auto event = (callbacks::evt_tick_t*) evt;
+    auto event = (events::event_tick_t*) evt;
 
     librg::entities->each<bomb_t, transform_t>([event](entity_t bombEntity, bomb_t& bomb, transform_t& bombTransform) {
         if (bomb.timeLeft < 0) {
@@ -108,8 +111,8 @@ void ontick(callbacks::evt_t* evt)
                     auto client = victim.component<client_t>();
 
                     if (client) {
-                        network::msg(GAME_LOCAL_PLAYER_SETHP, client->address, [hero](network::bitstream_t *data) {
-                            data->Write(hero->HP);
+                        network::msg(GAME_LOCAL_PLAYER_SETHP, client->peer, [hero](network::bitstream_t *data) {
+                            data->write(hero->HP);
                         });
                     }
                 }
@@ -131,8 +134,8 @@ void ontick(callbacks::evt_t* evt)
                 hero.HP = 100;
                 hero.cooldown = 0;
 
-                network::msg(GAME_LOCAL_PLAYER_SETHP, client.address, [entity](network::bitstream_t *data) {
-                    data->Write(100);
+                network::msg(GAME_LOCAL_PLAYER_SETHP, client.peer, [entity](network::bitstream_t *data) {
+                    data->write(100);
                 });
             }
             else
@@ -203,18 +206,24 @@ int main(int argc, char** argv)
     printf("%s\n\n", test.c_str());
 
     librg::core_initialize(librg::mode_server);
-    librg::callbacks::set(librg::callbacks::tick, ontick);
-    librg::callbacks::set(librg::callbacks::create, entity_create_forplayer);
-    librg::callbacks::set(librg::callbacks::update, entity_update_forplayers);
-    librg::callbacks::set(librg::callbacks::remove, entity_remove_forplayers);
-    librg::callbacks::set(librg::callbacks::connect, client_connect);
 
-    //librg::events::add("onClientConnect", on_client_connected_cb, on_client_connected_proxy);
+    events::add(events::on_log, [](events::event_t* evt) {
+        auto event = (events::event_log_t*) evt;
+        std::cout << event->output;
+    });
 
-    librg::network::add(GAME_ON_SHOOT, [](network::bitstream_t *data, network::packet_t *packet) {
+    events::set(events::on_tick, ontick);
+    events::set(events::on_create, entity_create_forplayer);
+    events::set(events::on_update, entity_update_forplayers);
+    events::set(events::on_remove, entity_remove_forplayers);
+    events::set(events::on_connect, client_connect);
+
+    // //librg::events::add("onClientConnect", on_client_connected_cb, on_client_connected_proxy);
+
+    librg::network::set(GAME_ON_SHOOT, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
         librg::core::log("Player shoots! BANG BANG!");
 
-        auto player = network::clients[packet->guid];
+        auto player = network::connected_peers[peer];
         auto plTransform = player.component<transform_t>();
 
         auto entity = entities->create();
@@ -225,34 +234,35 @@ int main(int argc, char** argv)
         streamable->type = TYPE_BOMB;
     });
 
-    librg::network::add(GAME_SYNC_PACKET, [](network::bitstream_t *data, network::packet_t *packet) {
+    librg::network::set(GAME_SYNC_PACKET, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
         float x, y;
 
-        data->Read(x);
-        data->Read(y);
+        data->read(x);
+        data->read(y);
 
-        auto transform = network::clients[packet->guid].component<transform_t>();
+        auto transform = network::connected_peers[peer].component<transform_t>();
 
         transform->position = hmm_vec3{ x, y, transform->position.Z };
     });
 
-    auto cfg = librg::core::config_t{};
+    auto cfg = librg::config_t{};
     cfg.ip = "localhost";
     cfg.port = 7750;
-    cfg.worldSize = HMM_Vec3(5000, 5000, 5000);
-    cfg.tickRate = 32;
+    cfg.world_size = HMM_Vec3(5000, 5000, 5000);
+    cfg.tick_delay = 32;
+    cfg.max_connections = 32;
+    cfg.platform_id   = NETWORK_PLATFORM_ID;
+    cfg.proto_version = NETWORK_PROTOCOL_VERSION;
+    cfg.build_version = NETWORK_BUILD_VERSION;
 
-    cfg.platformId   = NETWORK_PLATFORM_ID;
-    cfg.protoVersion = NETWORK_PROTOCOL_VERSION;
-    cfg.buildVersion = NETWORK_BUILD_VERSION;
-
-    callbacks::set(callbacks::log, [](callbacks::evt_t* evt) {
-        auto event = (callbacks::evt_log_t*)evt;
-        std::cout << event->output;
+    events::add(events::on_connect, [](events::event_t* evt) {
+        core::log("client connected yay!!!!!!");
     });
 
-    callbacks::set(callbacks::start, [](callbacks::evt_t* evt) {
-        for (int i = 0; i < 1; i++) {
+
+
+    events::set(events::on_start, [](events::event_t* evt) {
+        for (int i = 0; i < 150; i++) {
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
             auto stream = entity.assign<streamable_t>();
