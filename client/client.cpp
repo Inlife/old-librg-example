@@ -44,6 +44,15 @@ struct explosion_t {
 
 std::vector<explosion_t> explosions;
 
+SDL_Rect default_position() {
+    SDL_Rect position;
+
+    position.x = sizeX/2 - playerPos.x;
+    position.y = sizeY/2 - playerPos.y;
+
+    return position;
+}
+
 void Render()
 {
     // Clear the window and make it all green
@@ -51,22 +60,22 @@ void Render()
 
     SDL_SetRenderDrawColor( renderer, 75, 75, 76, 10 );
 
-    playerRange.x = playerPos.x - 250;
-    playerRange.y = playerPos.y - 250;
+    playerRange.x = sizeX/2 - 250;
+    playerRange.y = sizeY/2 - 250;
     playerRange.w = 500;
     playerRange.h = 500;
 
     // Render our "player"
     SDL_RenderFillRect( renderer, &playerRange );
 
-    // Change color to blue
+    // Change color to gray
     SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
 
     librg::entities->each<librg::transform_t, hero_t, librg::streamable_t>([](Entity entity, librg::transform_t& transform, hero_t& hero, librg::streamable_t& stream) {
-        SDL_Rect position;
+        SDL_Rect position = default_position();
 
-        position.x = (int)transform.position.X - 10;
-        position.y = (int)transform.position.Y - 10;
+        position.x += (int)transform.position.X - 10;
+        position.y += (int)transform.position.Y - 10;
         position.w = 20;
         position.h = 20;
 
@@ -90,16 +99,16 @@ void Render()
             SDL_RenderFillRect(renderer, &position);
         }
         else {
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150);
+            SDL_SetRenderDrawColor(renderer, HMM_Lerp(255, hero.decayLevel, 150.f), HMM_Lerp(0.0f, hero.decayLevel, 150.f), HMM_Lerp(0.0f, hero.decayLevel, 150.f), 255);
             SDL_RenderFillRect(renderer, &position);
         }
     });
 
     librg::entities->each<bomb_t, librg::transform_t>([](Entity entity, bomb_t& bomb, librg::transform_t& transform) {
-        SDL_Rect position;
+        SDL_Rect position = default_position();
 
-        position.x = (int)transform.position.X - 10;
-        position.y = (int)transform.position.Y - 10;
+        position.x += (int)transform.position.X - 10;
+        position.y += (int)transform.position.Y - 10;
         position.w = 20;
         position.h = 20;
 
@@ -112,8 +121,8 @@ void Render()
 
     SDL_Rect position;
 
-    position.x = playerPos.x - 10;
-    position.y = playerPos.y - 10;
+    position.x = sizeX/2 - 10;
+    position.y = sizeY/2 - 10;
     position.w = 20;
     position.h = 20;
 
@@ -133,7 +142,7 @@ void Render()
             SDL_RenderFillRect(renderer, &position);
         }
         else {
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150);
+            SDL_SetRenderDrawColor(renderer, 255, 255, 0, 150.f);
             SDL_RenderFillRect(renderer, &position);
         }
     }
@@ -141,8 +150,10 @@ void Render()
     for (auto &explosion : explosions) {
         if (explosion.impact < 0) continue;
 
-        position.x = explosion.position.X - explosion.impact / 2.f;
-        position.y = explosion.position.Y - explosion.impact / 2.f;
+        position = default_position();
+
+        position.x += explosion.position.X - explosion.impact / 2.f;
+        position.y += explosion.position.Y - explosion.impact / 2.f;
         position.w = explosion.impact;
         position.h = explosion.impact;
 
@@ -328,13 +339,19 @@ void entity_update(events::event_t* evt)
         case TYPE_PLAYER:
         {
             int HP, maxHP;
+
+
+            float decayLevel = 1.f;
             event->data->read(maxHP);
             event->data->read(HP);
+
+            if (HP <= 0) event->data->read(decayLevel);
 
             auto hero = event->entity.component<hero_t>();
             auto tran = event->entity.component<transform_t>();
             hero->maxHP = maxHP;
             hero->HP = HP;
+            hero->decayLevel = decayLevel;
         }break;
 
         case TYPE_BOMB:

@@ -6,6 +6,8 @@
 #include <messages.h>
 #include <types.h>
 
+#include <librg/utils/fs.h>
+
 using namespace librg;
 
 void client_connect(events::event_t* evt)
@@ -61,8 +63,11 @@ void entity_update_forplayers(events::event_t* evt)
         case TYPE_PLAYER:
         {
             auto hero = event->entity.component<hero_t>();
+
             event->data->write(hero->maxHP);
             event->data->write(hero->HP);
+
+            if (hero->HP <= 0) event->data->write(hero->decayLevel);
         }break;
 
         case TYPE_BOMB:
@@ -93,7 +98,9 @@ void ontick(events::event_t* evt)
             for (auto victim : victims) {
                 if (!victim.component<hero_t>()) continue;
 
-                float blastRadius = 5;
+#define pp(x) x*x
+                constexpr float blastRadius = pp(250);
+#undef pp
                 auto transform = victim.component<transform_t>();
                 auto hero = victim.component<hero_t>();
 
@@ -106,8 +113,11 @@ void ontick(events::event_t* evt)
                 auto v = (HMM_SubtractVec3(transform->position, bombTransform.position));
                 auto d = HMM_LengthSquaredVec3(v);
 
-                if (d <= 150*150) { // NOTE: optimization
-                    hero->HP -= d / 150*150 - 20; // deal 10 HP damage!
+                if (d <= blastRadius) {
+                    hero->HP -= (blastRadius - d) / blastRadius * 250;
+
+                    if (hero->HP < 0) hero->HP = 0;
+
                     auto client = victim.component<client_t>();
 
                     if (client) {
@@ -125,7 +135,7 @@ void ontick(events::event_t* evt)
         }
     });
 
-    librg::entities->each<hero_t, client_t>([event](entity_t entity, hero_t& hero, client_t& client) {
+    librg::entities->each<hero_t>([event](entity_t entity, hero_t& hero) {
         if (hero.HP <= 0) {
             if (hero.cooldown == 0) {
                 hero.cooldown = 1;
@@ -134,13 +144,25 @@ void ontick(events::event_t* evt)
                 hero.HP = 100;
                 hero.cooldown = 0;
 
-                network::msg(GAME_LOCAL_PLAYER_SETHP, client.peer, [entity](network::bitstream_t *data) {
-                    data->write(100);
-                });
+                auto client = entity.component<client_t>();
+
+                if (client) {
+                    network::msg(GAME_LOCAL_PLAYER_SETHP, client->peer, [entity](network::bitstream_t *data) {
+                        data->write(100);
+                    });
+                }
+                else {
+                    streamer::remove(entity);
+                }
             }
             else
             {
                 hero.cooldown -= event->dt / 25.f;
+
+                // TODO: Define these in linmath.h
+#define max(a,b) (a > b) ? a : b
+                hero.decayLevel = 1 - HMM_Lerp(0.f, max(hero.cooldown, 0.0f), 1.0f);
+#undef max
             }
         }
     });
@@ -159,10 +181,10 @@ void ontick(events::event_t* evt)
                     hero.walkTime = 2;
                     hero.accel.X += (rand() % 3 - 1.0) / 10.0;
                     hero.accel.Y += (rand() % 3 - 1.0) / 10.0;
-                }
 
-                hero.accel.X = (hero.accel.X > -1.0) ? ((hero.accel.X < 1.0) ? hero.accel.X : 1.0) : -1.0;
-                hero.accel.X = (hero.accel.Y > -1.0) ? ((hero.accel.Y < 1.0) ? hero.accel.Y : 1.0) : -1.0;
+                    hero.accel.X = (hero.accel.X > -1.0) ? ((hero.accel.X < 1.0) ? hero.accel.X : 1.0) : -1.0;
+                    hero.accel.X = (hero.accel.Y > -1.0) ? ((hero.accel.Y < 1.0) ? hero.accel.Y : 1.0) : -1.0;
+                }
             }
             else {
                 auto curpos = tran.position;
@@ -170,12 +192,12 @@ void ontick(events::event_t* evt)
                 curpos.X += hero.accel.X * event->dt * 100;
                 curpos.Y += hero.accel.Y * event->dt * 100;
 
-                if (curpos.X < 0 || curpos.X >= 800) {
+                if (curpos.X < 0 || curpos.X >= 5000) {
                     curpos.X += hero.accel.X * -2;
                     hero.accel.X *= -1;
                 }
 
-                if (curpos.Y < 0 || curpos.Y >= 600) {
+                if (curpos.Y < 0 || curpos.Y >= 5000) {
                     curpos.Y += hero.accel.Y * -2;
                     hero.accel.Y *= -1;
                 }
@@ -192,7 +214,10 @@ void ontick(events::event_t* evt)
     });
 }
 
-
+void generate_world()
+{
+    // TODO: Add some world variety...
+}
 
 
 int main(int argc, char** argv)
@@ -245,6 +270,7 @@ int main(int argc, char** argv)
         transform->position = hmm_vec3{ x, y, transform->position.Z };
     });
 
+
     auto cfg = librg::config_t{};
     cfg.ip = "localhost";
     cfg.port = 7750;
@@ -259,8 +285,10 @@ int main(int argc, char** argv)
         core::log("client connected yay!!!!!!");
     });
 
+
     events::set(events::on_start, [](events::event_t* evt) {
-        for (int i = 0; i < 150; i++) {
+        for (int i = 0; i < 2500; i++) {
+
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
             auto stream = entity.assign<streamable_t>();
@@ -272,7 +300,7 @@ int main(int argc, char** argv)
             stream->type = TYPE_ENEMY;
             srand(time(0) + i);
 
-            tran->position = hmm_vec3{ (float)(rand() % 800), (float)(rand() % 600), 0.0f };
+            tran->position = hmm_vec3{ (float)(rand() % 5000), (float)(rand() % 5000), 0.0f };
         }
     });
 

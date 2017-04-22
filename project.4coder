@@ -1,0 +1,9 @@
+/*
+	Basic configuration for 4coder.
+*/
+
+extensions=".c.cpp.h.hpp.bat.sh";
+
+fkey_command_win[1] = {"build.bat", "*compilation*", true};
+
+
