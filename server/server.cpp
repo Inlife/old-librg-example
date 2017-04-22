@@ -259,8 +259,6 @@ int main(int argc, char** argv)
         core::log("client connected yay!!!!!!");
     });
 
-
-
     events::set(events::on_start, [](events::event_t* evt) {
         for (int i = 0; i < 150; i++) {
             auto entity = entities->create();
