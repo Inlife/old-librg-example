@@ -290,7 +290,7 @@ void RunGame()
         librg::core::tick();
         Render();
 
-        SDL_Delay( 16 );
+        // SDL_Delay( 16 );
     }
 }
 
@@ -521,7 +521,7 @@ int main(int argc, char *args[])
 
     // start the client (network connection)
     librg::core::start(cfg);
-    librg::network::start(cfg);
+    librg::network::start();
 
     // Initlaize our player
     playerPos.x = 20;
