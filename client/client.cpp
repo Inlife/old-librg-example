@@ -71,7 +71,7 @@ void Render()
     // Change color to gray
     SDL_SetRenderDrawColor( renderer, 150, 150, 150, 255 );
 
-    librg::entities->each<librg::transform_t, hero_t, librg::streamable_t>([](Entity entity, librg::transform_t& transform, hero_t& hero, librg::streamable_t& stream) {
+    librg::entities->each<librg::transform_t, hero_t, librg::streamable_t>([](librg::entity_t entity, librg::transform_t& transform, hero_t& hero, librg::streamable_t& stream) {
         SDL_Rect position = default_position();
 
         position.x += (int)transform.position.X - 10;
@@ -104,7 +104,7 @@ void Render()
         }
     });
 
-    librg::entities->each<bomb_t, librg::transform_t>([](Entity entity, bomb_t& bomb, librg::transform_t& transform) {
+    librg::entities->each<bomb_t, librg::transform_t>([](librg::entity_t entity, bomb_t& bomb, librg::transform_t& transform) {
         SDL_Rect position = default_position();
 
         position.x += (int)transform.position.X - 10;

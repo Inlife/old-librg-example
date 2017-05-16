@@ -287,7 +287,7 @@ int main(int argc, char** argv)
 
 
     events::set(events::on_start, [](events::event_t* evt) {
-        for (int i = 0; i < 450; i++) {
+        for (int i = 0; i < 45000; i++) {
 
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
