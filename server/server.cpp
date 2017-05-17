@@ -158,11 +158,7 @@ void ontick(events::event_t* evt)
             else
             {
                 hero.cooldown -= event->dt / 25.f;
-
-                // TODO: Define these in linmath.h
-#define max(a,b) (a > b) ? a : b
-                hero.decayLevel = 1 - HMM_Lerp(0.f, max(hero.cooldown, 0.0f), 1.0f);
-#undef max
+                hero.decayLevel = 1 - HMM_Lerp(0.f, HMM_MAX(hero.cooldown, 0.0f), 1.0f);
             }
         }
     });
@@ -172,7 +168,7 @@ void ontick(events::event_t* evt)
             if (hero.walkTime == 0) {
 
                 if (hero.panicCooldown > 0) {
-                    hero.walkTime = 0.33;
+                    hero.walkTime = 0.33f;
                     hero.accel.X += (rand() % 5 - 10.0) / 10.0;
                     hero.accel.Y += (rand() % 5 - 10.0) / 10.0;
                     hero.panicCooldown -= event->dt;
@@ -270,7 +266,6 @@ int main(int argc, char** argv)
         transform->position = hmm_vec3{ x, y, transform->position.Z };
     });
 
-
     auto cfg = librg::config_t{};
     cfg.ip = "localhost";
     cfg.port = 7750;
@@ -287,7 +282,7 @@ int main(int argc, char** argv)
 
 
     events::set(events::on_start, [](events::event_t* evt) {
-        for (int i = 0; i < 45000; i++) {
+        for (int i = 0; i < 450; i++) {
 
             auto entity = entities->create();
             auto tran   = entity.assign<transform_t>();
