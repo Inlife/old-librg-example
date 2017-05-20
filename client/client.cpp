@@ -400,24 +400,21 @@ void entity_remove(events::event_t* evt)
  */
 void entity_inter(events::event_t* evt)
 {
-    auto event = (events::event_inter_t*) evt;
-    // librg::core::log("entity_interpolate called");
+    auto event = (events::event_entity_t*) evt;
+    auto transform = event->entity.component<transform_t>();
 
-    auto tran = event->entity.component<transform_t>();
-
-    // tran->position = event->data.position;
-    *tran = event->data;
+    *transform = *(transform_t *)event->data;
 }
 
 void ontick(events::event_t* evt)
 {
     auto event = (events::event_tick_t*) evt;
 
-    network::msg(GAME_SYNC_PACKET, [](network::bitstream_t* data) {
-        // core::log("sending packet with id: %d", GAME_SYNC_PACKET);
-        data->write((float) playerPos.x);
-        data->write((float) playerPos.y);
-    });
+    // network::msg(GAME_SYNC_PACKET, [](network::bitstream_t* data) {
+    //     // core::log("sending packet with id: %d", GAME_SYNC_PACKET);
+    //     data->write((float) playerPos.x);
+    //     data->write((float) playerPos.y);
+    // });
 
     if (shooting) {
         network::msg(GAME_ON_SHOOT, nullptr);
@@ -439,6 +436,39 @@ void ontick(events::event_t* evt)
     }
 }
 
+// iterates over each entity
+// passes bitstream into to write data for each entity
+// after interation finishes packet will be sent ot the server via unreliable
+void clientstreamer_entity(events::event_t* evt)
+{
+    // auto event = (events::event_stre_t*) evt;
+    // auto entity = event->entity;
+
+    // switch (event->type) {
+    //     case TYPE_PLAYER:
+    //         event->data->write_float(playerPos.x);
+    //         event->data->write_float(playerPos.y);
+    //         break;
+    //     // case TYPE_VEHICLE:
+    //     //     // get local vehicle position
+    //     //     // send it as data
+    //     //     // blalbabla
+    //     //     break;
+    // }
+}
+
+void cientstreamer_entity_added(events::event_t* evt)
+{
+    // auto event = (events::event_cientstreamer_t*) evt;
+    // auto entity = event->entity;
+
+
+}
+
+void cientstreamer_entity_remove(events::event_t* evt)
+{
+
+}
 
 int main(int argc, char *args[])
 {

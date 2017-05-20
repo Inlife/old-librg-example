@@ -12,18 +12,29 @@ using namespace librg;
 
 void client_connect(events::event_t* evt)
 {
-    auto event = (events::event_connect_t*)evt;
-
+    auto event  = (events::event_connect_t*)evt;
     auto entity = event->entity;
+
+    entity.assign<streamable_t>();
+    entity.assign<transform_t>();
     entity.assign<hero_t>(100);
 
     auto client = entity.component<client_t>();
+    client->active = true;
 
     network::msg(GAME_NEW_LOCAL_PLAYER, client->peer, [](network::bitstream_t *data) {
         data->write(100);
     });
 
     librg::core::log("New hero came!");
+}
+
+void client_disconnect(events::event_t* evt)
+{
+    auto event  = (events::event_connect_t*)evt;
+    auto entity = event->entity;
+
+    streamer::remove(entity, false);
 }
 
 /**
@@ -238,6 +249,7 @@ int main(int argc, char** argv)
     events::set(events::on_update, entity_update_forplayers);
     events::set(events::on_remove, entity_remove_forplayers);
     events::set(events::on_connect, client_connect);
+    events::set(events::on_disconnect, client_disconnect);
 
     // //librg::events::add("onClientConnect", on_client_connected_cb, on_client_connected_proxy);
 
@@ -280,6 +292,21 @@ int main(int argc, char** argv)
         core::log("client connected yay!!!!!!");
     });
 
+    network::set(GAME_VEHICLE_ENTER, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
+        auto id = entity_t::Id(data->read_uint64());
+
+        if (entities->valid(id)) {
+            streamer::client::set(entities->get(id), peer);
+        }
+    });
+
+    network::set(GAME_VEHICLE_EXIT, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
+        auto id = entity_t::Id(data->read_uint64());
+
+        if (entities->valid(id)) {
+            streamer::client::remove(entities->get(id));
+        }
+    });
 
     events::set(events::on_start, [](events::event_t* evt) {
         for (int i = 0; i < 450; i++) {
