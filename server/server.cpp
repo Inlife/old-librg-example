@@ -10,31 +10,51 @@
 
 using namespace librg;
 
-void client_connect(events::event_t* evt)
+void spawn_player(entity_t entity)
 {
-    auto event  = (events::event_connect_t*)evt;
-    auto entity = event->entity;
+    auto client = entity.component<client_t>();
 
+    // assiging streameable component will
+    // auto-add this entity to the streamer
     entity.assign<streamable_t>();
-    entity.assign<transform_t>();
     entity.assign<hero_t>(100);
 
+    // add entity as client streamable
+    streamer::client::set(entity, client->peer);
+    core::log("spawned player!");
+}
+
+void unspawn_player(entity_t entity)
+{
+    streamer::remove(entity, true);
+    streamer::client::remove(entity);
+
+    entity.remove<streamable_t>();
+    entity.remove<hero_t>();
+
+    core::log("unspawned player!");
+}
+
+void client_connect(events::event_t* evt)
+{
+    auto event  = (events::event_entity_t*)evt;
+    auto entity = event->entity;
     auto client = entity.component<client_t>();
-    client->active = true;
 
-    network::msg(GAME_NEW_LOCAL_PLAYER, client->peer, [](network::bitstream_t *data) {
-        data->write(100);
-    });
+    core::log("connect: id: %ld name: %s serial: %s", client->peer->connectID, "nonono", "anananana");
 
-    librg::core::log("New hero came!");
+    spawn_player(entity);
 }
 
 void client_disconnect(events::event_t* evt)
 {
-    auto event  = (events::event_connect_t*)evt;
+    auto event  = (events::event_entity_t*)evt;
     auto entity = event->entity;
+    auto client = entity.component<client_t>();
 
-    streamer::remove(entity, false);
+    core::log("disconnect: id: %ld name: %s serial: %s", client->peer->connectID, "nonono", "anananana");
+
+    unspawn_player(entity);
 }
 
 /**
@@ -251,8 +271,6 @@ int main(int argc, char** argv)
     events::set(events::on_connect, client_connect);
     events::set(events::on_disconnect, client_disconnect);
 
-    // //librg::events::add("onClientConnect", on_client_connected_cb, on_client_connected_proxy);
-
     librg::network::set(GAME_ON_SHOOT, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
         librg::core::log("Player shoots! BANG BANG!");
 
@@ -267,16 +285,16 @@ int main(int argc, char** argv)
         streamable->type = TYPE_BOMB;
     });
 
-    librg::network::set(GAME_SYNC_PACKET, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
-        float x, y;
+    // librg::network::set(GAME_SYNC_PACKET, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
+    //     float x, y;
 
-        data->read(x);
-        data->read(y);
+    //     data->read(x);
+    //     data->read(y);
 
-        auto transform = network::connected_peers[peer].component<transform_t>();
+    //     auto transform = network::connected_peers[peer].component<transform_t>();
 
-        transform->position = hmm_vec3{ x, y, transform->position.Z };
-    });
+    //     transform->position = hmm_vec3{ x, y, transform->position.Z };
+    // });
 
     auto cfg = librg::config_t{};
     cfg.ip = "localhost";

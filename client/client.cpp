@@ -441,20 +441,21 @@ void ontick(events::event_t* evt)
 // after interation finishes packet will be sent ot the server via unreliable
 void clientstreamer_entity(events::event_t* evt)
 {
-    // auto event = (events::event_stre_t*) evt;
-    // auto entity = event->entity;
+    auto event = (events::event_bs_entity_t*) evt;
+    auto entity = event->entity;
+    auto transform = entity.component<transform_t>();
 
-    // switch (event->type) {
-    //     case TYPE_PLAYER:
-    //         event->data->write_float(playerPos.x);
-    //         event->data->write_float(playerPos.y);
-    //         break;
-    //     // case TYPE_VEHICLE:
-    //     //     // get local vehicle position
-    //     //     // send it as data
-    //     //     // blalbabla
-    //     //     break;
-    // }
+    switch (event->type) {
+        case TYPE_PLAYER:
+            transform->position.X = playerPos.x;
+            transform->position.Y = playerPos.y;
+            break;
+        // case TYPE_VEHICLE:
+        //     // get local vehicle position
+        //     // send it as data
+        //     // blalbabla
+        //     break;
+    }
 }
 
 void cientstreamer_entity_added(events::event_t* evt)
@@ -468,6 +469,42 @@ void cientstreamer_entity_added(events::event_t* evt)
 void cientstreamer_entity_remove(events::event_t* evt)
 {
 
+}
+
+void spawn_player(entity_t entity)
+{
+    entity.assign<streamable_t>();
+    entity.assign<hero_t>(100);
+
+    playerEntity = entity;
+
+    core::log("spawned player!");
+}
+
+void unspawn_player(entity_t entity)
+{
+    entity.remove<streamable_t>();
+    entity.remove<hero_t>();
+
+    core::log("unspawned player!");
+}
+
+void client_connect(events::event_t* evt)
+{
+    auto event  = (events::event_entity_t*)evt;
+    auto entity = event->entity;
+
+    core::log("connected to the server");
+    spawn_player(entity);
+}
+
+void client_disconnect(events::event_t* evt)
+{
+    auto event  = (events::event_entity_t*)evt;
+    auto entity = event->entity;
+
+    core::log("disconnected form the server");
+    unspawn_player(entity);
 }
 
 int main(int argc, char *args[])
@@ -489,19 +526,22 @@ int main(int argc, char *args[])
     // librg::core_initialize(librg::mode_client);
 
     // setup callbacks
-    librg::events::add(librg::events::on_tick, ontick);
-    librg::events::add(librg::events::on_inter, entity_inter);
-    librg::events::add(librg::events::on_create, entity_create);
-    librg::events::add(librg::events::on_update, entity_update);
-    librg::events::add(librg::events::on_remove, entity_remove);
+    events::set(events::on_tick, ontick);
+    events::set(events::on_inter, entity_inter);
+    events::set(events::on_create, entity_create);
+    events::set(events::on_update, entity_update);
+    events::set(events::on_remove, entity_remove);
+    events::set(events::on_client_stream_entity, clientstreamer_entity);
+    events::set(events::on_connect, client_connect);
+    events::set(events::on_disconnect, client_disconnect);
 
-    librg::network::set(GAME_NEW_LOCAL_PLAYER, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
-        int maxHP;
-        data->read(maxHP);
+    // librg::network::set(GAME_NEW_LOCAL_PLAYER, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
+    //     int maxHP;
+    //     data->read(maxHP);
 
-        playerEntity = librg::entities->create();
-        playerEntity.assign<hero_t>(maxHP);
-    });
+    //     playerEntity = librg::entities->create();
+    //     playerEntity.assign<hero_t>(maxHP);
+    // });
 
     librg::network::set(GAME_LOCAL_PLAYER_SETHP, [](network::peer_t* peer, network::packet_t* packet, network::bitstream_t* data) {
         int HP;
